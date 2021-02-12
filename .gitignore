@@ -4,7 +4,6 @@ kernel.o
 system.img
 bootloader
 bootloader.asm
-if230.config
 if2230.config
 kernel.asm
 kernel_asm.o
