@@ -83,9 +83,9 @@ int mod(int dividend, int divisor){
 // division
 int div(int numerator, int denominator){
     int res = 0;
-	while (numerator >= denominator * res){
-        res += 1;  
+    while (numerator >= denominator * res){
+        res += 1;
     }
     res -= 1;
-	return res;
+    return res;
 }
