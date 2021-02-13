@@ -67,9 +67,9 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX){
 
 // clear
 void clear(char* buffer, int length){
-	for(int i = 0; i < length; i++){
-		buffer[i] = 0x0;    // isi dengan 0x0
-	}
+    for (int i = 0; i < length; i++){
+        buffer[i] = 0x0;    // isi dengan 0
+    }
 }
 
 // modulo
