@@ -8,15 +8,18 @@ void clearScreen(int mode);
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 int interrupt(int number, int AX, int BX, int CX, int DX);
 void printString(char *string);
-// void readString(char *string);
+//void readString(char *string);
 void clear(char *buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
 int mod(int dividend, int divisor);         // long apa int?
 int div(int numerator, int denominator);    // long apa int?
 
 int main() {
-      
+     
     clearScreen(0);
-    printString("Hello World\n");
+    printString("Hello World!!\n");
+    char *var;
+    //readString(c);
+    //printString(c);
     // tampil();
     
     // makeInterrupt21();
@@ -50,6 +53,17 @@ void printString(char *string) {
         i++;
     }
 }
+/*
+void readString(char *string){
+    int i = 0;
+    while (string[i] != 0x0A && i<5){
+        string[i] = interrupt(0x16,0,0,0,0);
+        interrupt(0x10,0x0E00 + string[i],0,0,0);
+        i++;
+    }
+    string[i] = '\0';   
+}*/
+
 
 
 void handleInterrupt21 (int AX, int BX, int CX, int DX){
@@ -67,7 +81,8 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX){
 
 // clear
 void clear(char* buffer, int length){
-    for (int i = 0; i < length; i++){
+    int i = 0;
+    for (i; i < length; i++){
         buffer[i] = 0x0;    // isi dengan 0
     }
 }
