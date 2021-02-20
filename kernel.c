@@ -10,9 +10,10 @@ int vt = 0xb;       // vertical tab (\v)
 int ff = 0xc;       // form feed (\f)
 int cr = 0xd;       // carriage return (\r) (enter)
 int esc = 0x1b;     // escape (\e)
+int dump;
 
 
-void clearScreen(int mode);
+int clearScreen(int mode);
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 int interrupt(int number, int AX, int BX, int CX, int DX);
 void printString(char *string);
@@ -21,9 +22,12 @@ void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan
 int mod(int dividend, int divisor);         // long apa int?
 int div(int numerator, int denominator);    // long apa int?
 
+
 int main() {
-    clearScreen(0);
-    char buff[100];
+    char buff[256];
+
+    dump = clearScreen(0);
+ 
 
     printString("Hello World\n");
 
@@ -35,7 +39,7 @@ int main() {
     while (1);
 }
 
-void clearScreen(int mode) {
+int clearScreen(int mode) {
     /* mode 0 : default text
        mode 1 : text ART
        mode 2 : graphical
@@ -52,6 +56,7 @@ void clearScreen(int mode) {
         interrupt(0x10,0x0003,0,0,0);
         break;
     }
+    return;
 }
 
 void printString(char *string) {
