@@ -101,6 +101,17 @@ void readString(char* string) {
     }
     
 }
+/*
+void readString(char *string){
+    int i = 0;
+    while (string[i] != 0x0A && i<5){
+        string[i] = interrupt(0x16,0,0,0,0);
+        interrupt(0x10,0x0E00 + string[i],0,0,0);
+        i++;
+    }
+    string[i] = '\0';   
+}*/
+
 
 // void wait() {
 //     printString("Press Anything To Continue..");
