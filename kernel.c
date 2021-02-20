@@ -23,10 +23,11 @@ int div(int numerator, int denominator);    // long apa int?
 
 int main() {
     clearScreen(0);
+    char buff[100];
 
-    char buff[1024];
-    printString("Hello World");
+    printString("Hello World\n");
 
+    
     readString(buff);
     printString(buff);
     
@@ -58,10 +59,15 @@ void printString(char *string) {
     int i = 0;
     while (string[i] != '\0') {
         interrupt(INT_10H, AL + string[i],0,0,0);
+
+        if (string[i] == '\n') {
+            // interrupt(INT_10H,AL+lf,0,0,0);
+            interrupt(INT_10H,AL+cr,0,0,0);
+        }
         i++;
     }
-    interrupt(INT_10H,AL+lf,0,0,0);
-    interrupt(INT_10H,AL+cr,0,0,0);
+    
+    
 }
 
 
@@ -95,6 +101,11 @@ void readString(char* string) {
     }
     
 }
+
+// void wait() {
+//     printString("Press Anything To Continue..");
+//     int ascii = interrupt(INT_16H,0,0,0,0);
+// }
 
 
 void handleInterrupt21 (int AX, int BX, int CX, int DX){
