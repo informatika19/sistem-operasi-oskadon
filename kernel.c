@@ -2,25 +2,33 @@
 // KAMUS
 #define INT_10H 0x10
 #define INT_16H 0x16
+int nul = 0x0;      // null (\0)
+int bs = 0x8;       // backspace (\b)
+int ht = 0x9;       // horizontal tab (\t)
+int lf = 0xa;       // line feed (\n) 
+int vt = 0xb;       // vertical tab (\v)
+int ff = 0xc;       // form feed (\f)
+int cr = 0xd;       // carriage return (\r) (enter)
+int esc = 0x1b;     // escape (\e)
 
 
 void clearScreen(int mode);
-//void tampil();
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 int interrupt(int number, int AX, int BX, int CX, int DX);
 void printString(char *string);
-// void readString(char *string);
+void readString(char *string);
 void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
 int mod(int dividend, int divisor);         // long apa int?
 int div(int numerator, int denominator);    // long apa int?
 
 int main() {
-    char buffer[256];
-
-    
     clearScreen(0);
-    printString("Hello World\n");
-    // tampil();
+
+    char buff[1024];
+    printString("Hello World");
+
+    readString(buff);
+    printString(buff);
     
     // makeInterrupt21();
     while (1);
@@ -52,19 +60,12 @@ void printString(char *string) {
         interrupt(INT_10H, AL + string[i],0,0,0);
         i++;
     }
+    interrupt(INT_10H,AL+lf,0,0,0);
+    interrupt(INT_10H,AL+cr,0,0,0);
 }
 
 
-void readString(char* string) {
-    int nul = 0x0;      // null (\0)
-    int bs = 0x8;       // backspace (\b)
-    int ht = 0x9;       // horizontal tab (\t)
-    int lf = 0xa;       // line feed (\n) 
-    int vt = 0xb;       // vertical tab (\v)
-    int ff = 0xc;       // form feed (\f)
-    int cr = 0xd;       // carriage return (\r) (enter)
-    int esc = 0x1b;     // escape (\e)
-    
+void readString(char* string) {    
     int AL = 0x0E00;
     int loop = 1;
     int i = 0;
@@ -75,9 +76,13 @@ void readString(char* string) {
         ascii = interrupt(INT_16H,0,0,0,0);
         if (ascii == cr) {
             string[i] = nul;
+            interrupt(INT_10H,AL+lf,0,0,0);
+            interrupt(INT_10H,AL+cr,0,0,0);
             loop = 0;
         } else if (ascii == bs) {
             if (i > 0) {
+                interrupt(INT_10H,AL+bs,0,0,0);
+                interrupt(INT_10H,AL+nul,0,0,0);
                 interrupt(INT_10H,AL+bs,0,0,0);
                 i--;
             }
@@ -98,7 +103,7 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX){
             printString(BX);
             break;
         case 0x1:
-            // readString(BX);
+            readString(BX);
             break;
         default:
             printString("Invalid interrupt");
