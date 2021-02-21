@@ -14,6 +14,7 @@ int esc = 0x1b;     // escape (\e)
 // Graphic
 int max_X = 320;
 int max_Y = 200;
+// int mode;
 
 extern char imageFile;
 
@@ -33,56 +34,22 @@ int div(int numerator, int denominator);    // long apa int?
 void initDrawImage();
 void drawImage();
 void drawSquare();
+void drawSomething();
 
 
 int main() {
-    
     char buff[256];
-    int mode = interrupt(0x10,0x0003,0,0,0);
 
-
-    printString("Hello World\n");
-    readString(buff);
-    printString(buff);
-
-    // char buff[256];
-    // // mode = clearScreen(0);
-    // int mode = interrupt(0x10,0x0013,0,0,0);
-
-    // char* image = &imageFile;
-    // int address;
-
-    // int x_size = image[0];
-    // int y_size = image[1];
+    int dump = modeScreen(2);
 
     
-    // // Coba bikin ketengah
-    // int halfDif_x = div((max_X - x_size),2);
-    // int halfDif_y = div((max_Y - y_size),2);
+    drawSomething();
 
-    // int x = halfDif_x;
-    // int y = halfDif_y;
-    
-    // int i = 2;
-
-    // while (y < y_size + halfDif_y) {
-    //     while (x < x_size + halfDif_x) {
-    //         address = 320*y + x;
-    //         putInMemory(0xA000,address,image[i]);
-    //         i++;
-    //         x++;
-    //     }
-    //     x = halfDif_x;
-    //     y++;
-    // }
-
-    
-
-    
+    // printString("Hello World\n");
     // readString(buff);
     // printString(buff);
+
     
-    // makeInterrupt21();
     while (1);
 }
 
@@ -117,7 +84,9 @@ void printString(char *string) {
             interrupt(INT_10H,AL+cr,0,0,0);
         }
         i++;
-    }  
+    }
+    
+    
 }
 
 
@@ -164,21 +133,22 @@ void drawSomething() {
     int halfDif_x = div((max_X - x_size),2);
     int halfDif_y = div((max_Y - y_size),2);
 
-    int x = 0;
-    int y = 0;
+    int x = halfDif_x;
+    int y = halfDif_y;
     
     int i = 2;
 
-    while (y < y_size) {
-        while (x < x_size) {
+    while (y < y_size + halfDif_y) {
+        while (x < x_size + halfDif_x) {
             address = 320*y + x;
             putInMemory(0xA000,address,image[i]);
             i++;
             x++;
         }
-        x = 0;
+        x = halfDif_x;
         y++;
     }
+    // return;
 }
 
 

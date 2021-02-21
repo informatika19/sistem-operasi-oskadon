@@ -9,11 +9,6 @@ global _interrupt
 global _makeInterrupt21
 extern _handleInterrupt21
 
-global _initDrawImage
-global _drawImage
-global _loadImage
-global _imageFile
-
 
 ;void putInMemory (int segment, int address, char character)
 _putInMemory:
@@ -85,56 +80,5 @@ _interrupt21ServiceRoutine:
 
 	iret
 
-; _initDrawImage:
-; 	pusha
-; 	mov si, _imageFile
-; 	call _drawImage ;draw image
-; 	popa
-; 	ret
-
-
-; ;------------------------------------------------------
-; ;si = image source
-; _drawImage:
-; 	pusha
-; 	xor ax, ax
-; 	; mov ax, [si] 
-; 	; inc si
-; 	lodsb			;x-length (first byte of binary)
-; 	mov cx, ax                      
-; 	; mov ax, [si] 
-; 	; inc si
-; 	lodsb			;y-length (2nd byte of binary)
-; 	mov dx, ax                      
-	
-; 	.for_x:
-; 		push dx
-; 		.for_y:
-; 			mov bh, 0               ;page number (0 is default)
-; 			; mov ax, [si] 
-; 			; inc si
-; 			lodsb                   ;read byte to al (color) -> next byte
-; 			; mov al, 0xE
-; 			mov ah, 0xC             ;write pixel at coordinate (cx, dx)
-; 			int 0x10                ;draw!
-; 		sub dx, 1                   ;decrease dx by one and set flags
-; 		jnz .for_y                  ;repeat for y-length
-; 		pop dx                      ;restore dx (y-length)
-; 	sub cx, 1                       ;decrease si by one and set flags
-; 	jnz .for_x                      ;repeat for x-length
-; 	popa                            ;restore everything
-; 	ret
-
-
-;------------------------------------------------------
-
-; _loadImage:
-; 	push bp
-; 	mov bp,sp
-; 	mov ax, _imageFile
-; 	pop bp
-; 	ret
-
-_imageFile: incbin "image.bin"       ;include the raw image binary into the kernel
 
 
