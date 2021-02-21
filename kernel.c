@@ -2,6 +2,9 @@
 // KAMUS
 #define INT_10H 0x10
 #define INT_16H 0x16
+#define VIDEO_SEGMENT 0xB000
+#define BASE  0x8000
+#define SCREEN_SIZE 25*80*2
 int nul = 0x0;      // null (\0)
 int bs = 0x8;       // backspace (\b)
 int ht = 0x9;       // horizontal tab (\t)
@@ -44,10 +47,11 @@ int main() {
 
     
     drawSomething();
-
-    // printString("Hello World\n");
-    // readString(buff);
-    // printString(buff);
+    dump = modeScreen(0);
+    printString("Hello World\n");
+    //buff = "Hello World\n";
+     readString(buff);
+     printString(buff);
 
     
     while (1);
@@ -72,22 +76,44 @@ int modeScreen(int mode) {
     }
     return;
 }
+void printString( char* s){
+    putInMemory(0xB000, 0x8000, 'H');
+    putInMemory(0xB000, 0x8001, 0xD);
+    putInMemory(0xB000, 0x8002, 'a');
+    putInMemory(0xB000, 0x8003, 0xD);
+    putInMemory(0xB000, 0x8004, 'i');
+    putInMemory(0xB000, 0x8005, 0xD);
 
-void printString(char *string) {
-    int AL = 0x0E00;
-    int i = 0;
-    while (string[i] != '\0') {
-        interrupt(INT_10H, AL + string[i],0,0,0);
 
-        if (string[i] == '\n') {
-            // interrupt(INT_10H,AL+lf,0,0,0);
-            interrupt(INT_10H,AL+cr,0,0,0);
-        }
-        i++;
-    }
-    
-    
+/*
+   int i=0;
+   int row = 0;
+   int col = 0;
+   int color= 0; 
+   int bg = 0;
+   int offset=BASE+((row-1)*80*2)+col*2;
+   while(s[i]!='\0'){
+      putInMemory(VIDEO_SEGMENT, offset + i*2, s[i]);
+      putInMemory(VIDEO_SEGMENT, offset + i*2+1, color + (bg<<4));
+      i++;
+   }*/
 }
+
+// void printString(char *string) {
+//     int AL = 0x0E00;
+//     int i = 0;
+//     while (string[i] != '\0') {
+//         interrupt(INT_10H, AL + string[i],0,0,0);
+
+//         if (string[i] == '\n') {
+//             // interrupt(INT_10H,AL+lf,0,0,0);
+//             interrupt(INT_10H,AL+cr,0,0,0);
+//         }
+//         i++;
+//     }
+    
+    
+// }
 
 
 void readString(char* string) {    
