@@ -43,11 +43,11 @@ void clear(char* buff, int len);
 int main() {
     char buff[13312];
 	char b[512];
-    int dump = modeScreen(2);
+    //int dump = modeScreen(2);
 
     
-    drawSomething();
-    dump = modeScreen(0);
+    //drawSomething();
+    //dump = modeScreen(0);
     //clear(buff,13312);
     printString("Hello World\n");
     
@@ -79,17 +79,18 @@ int modeScreen(int mode) {
     return;
 }
 void printString(char* s){
-    // putInMemory(0xB000, 0x8000, 'H');
-    // putInMemory(0xB000, 0x8001, 0xD);
-    // putInMemory(0xB000, 0x8002, 'a');
-    // putInMemory(0xB000, 0x8003, 0xD);
-    // putInMemory(0xB000, 0x8004, 'i');
-    // putInMemory(0xB000, 0x8005, 0xD);
-   int i=0;
-   int offset=0x8000;
-   while(s[i]!='\n'){
+    int i = 0;
+    int offset=0x8000;
+    putInMemory(0xB000, 0x8000, 'H');
+    putInMemory(0xB000, 0x8001, 0xD);
+    putInMemory(0xB000, 0x8002, 'a');
+    putInMemory(0xB000, 0x8003, 0xD);
+    putInMemory(0xB000, 0x8004, 'i');
+    putInMemory(0xB000, 0x8005, 0xD);
+
+    while(s[i]!= '\0'){
       putInMemory(0xB000, offset + i*2, s[i]);
-      putInMemory(0xB000, offset + i*2+1,0xD);
+      putInMemory(0xB000, offset + i*2+1,0xC);
       i++;
    }
 
@@ -175,7 +176,7 @@ void drawSomething() {
     while (y < y_size + halfDif_y) {
         while (x < x_size + halfDif_x) {
             address = 320*y + x;
-            putInMemory(0xA000,address,image[i]);
+            putInMemory(0xA010,address,image[i]);
             i++;
             x++;
         }
