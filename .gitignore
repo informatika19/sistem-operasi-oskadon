@@ -1,12 +1,11 @@
 application/cache
+**/Tutorial
 kernel
 kernel.o
 system.img
-bootloader
-bootloader.asm
+
 if2230.config
-kernel.asm
-kernel_asm.o
+
 lib.asm
 Bochs 2.6.11.lnk
 bochsout.txt

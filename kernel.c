@@ -38,47 +38,45 @@ void drawSquare();
 int main() {
     
     char buff[256];
-    // mode = clearScreen(0);
-    int mode = interrupt(0x10,0x0013,0,0,0);
+    int mode = interrupt(0x10,0x0003,0,0,0);
 
-    char* image = &imageFile;
-    int address;
 
-    int x_size = image[0];
-    int y_size = image[1];
+    printString("Hello World\n");
+    readString(buff);
+    printString(buff);
+
+    // char buff[256];
+    // // mode = clearScreen(0);
+    // int mode = interrupt(0x10,0x0013,0,0,0);
+
+    // char* image = &imageFile;
+    // int address;
+
+    // int x_size = image[0];
+    // int y_size = image[1];
 
     
-    // Coba bikin ketengah
-    int halfDif_x = (max_X - x_size)/2;
-    int halfDif_y = (max_Y - y_size)/2;
+    // // Coba bikin ketengah
+    // int halfDif_x = div((max_X - x_size),2);
+    // int halfDif_y = div((max_Y - y_size),2);
 
-    int x = 10;
-    int y = 0;
+    // int x = halfDif_x;
+    // int y = halfDif_y;
     
-    int i = 2;
+    // int i = 2;
 
-    while (y < y_size) {
-        while (x < x_size+10) {
-            address = 320*y + x;
-            putInMemory(0xA000,address,image[i]);
-            i++;
-            x++;
-        }
-        x = 10;
-        y++;
-    }
+    // while (y < y_size + halfDif_y) {
+    //     while (x < x_size + halfDif_x) {
+    //         address = 320*y + x;
+    //         putInMemory(0xA000,address,image[i]);
+    //         i++;
+    //         x++;
+    //     }
+    //     x = halfDif_x;
+    //     y++;
+    // }
 
-    // putInMemory(0xA000,2,0xE);
-    // putInMemory(0xA000,3,0xE);
-    // putInMemory(0xA000,4,0xE);
-    // putInMemory(0xA000,5,0xE);
-    // putInMemory(0xA000,6,0xE);
-    // putInMemory(0xA000,7,0xE);
-    // drawSomething();
-    // drawSquare();
-    // initDrawImage();
-
-    // printString("Hello World\n");
+    
 
     
     // readString(buff);
@@ -119,9 +117,7 @@ void printString(char *string) {
             interrupt(INT_10H,AL+cr,0,0,0);
         }
         i++;
-    }
-    
-    
+    }  
 }
 
 
@@ -165,8 +161,8 @@ void drawSomething() {
 
     
     // Coba bikin ketengah
-    // int halfDif_x = div((max_X - x_size),2);
-    // int halfDif_y = div((max_Y - y_size),2);
+    int halfDif_x = div((max_X - x_size),2);
+    int halfDif_y = div((max_Y - y_size),2);
 
     int x = 0;
     int y = 0;
@@ -228,9 +224,6 @@ void clear(char* buffer, int length){
         buffer[i] = 0x0;
     }
     
-    // for (int i = 0; i < length; i++){
-    //     buffer[i] = 0x0;    // isi dengan 0
-    // }
 }
 
 // modulo
