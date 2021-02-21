@@ -43,12 +43,12 @@ int main() {
     
     // drawSomething();
 
-    printString("Hello World\n");
-    readString(buff);
-    printString(buff);
-
-    
-    while (1);
+    handleInterrupt21 (0, "Hello World\n", 0, 0);
+    while (1) {
+        handleInterrupt21 (1, buff, 0, 0);
+        handleInterrupt21 (0, buff, 0, 0);
+        handleInterrupt21 (0, "\n", 0, 0);
+    };
 }
 
 int modeScreen(int mode) {
@@ -69,6 +69,19 @@ int modeScreen(int mode) {
         break;
     }
     return;
+}
+
+void handleInterrupt21 (int AX, int BX, int CX, int DX){
+    switch (AX) {
+        case 0x0:
+            printString(BX);
+            break;
+        case 0x1:
+            readString(BX);
+            break;
+        default:
+            printString("Invalid interrupt");
+    }
 }
 
 void printString(char *string) {
@@ -173,18 +186,7 @@ void drawSquare() {
 
 
 
-void handleInterrupt21 (int AX, int BX, int CX, int DX){
-    switch (AX) {
-        case 0x0:
-            printString(BX);
-            break;
-        case 0x1:
-            readString(BX);
-            break;
-        default:
-            printString("Invalid interrupt");
-    }
-}
+
 
 // clear
 void clear(char* buffer, int length){
