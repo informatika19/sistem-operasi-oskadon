@@ -10,10 +10,16 @@ int vt = 0xb;       // vertical tab (\v)
 int ff = 0xc;       // form feed (\f)
 int cr = 0xd;       // carriage return (\r) (enter)
 int esc = 0x1b;     // escape (\e)
-int dump;
+
+// Graphic
+int max_X = 320;
+int max_Y = 200;
+
+extern char imageFile;
 
 
-int clearScreen(int mode);
+void putInMemory (int segment, int address, char character);
+int modeScreen(int mode);
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 int interrupt(int number, int AX, int BX, int CX, int DX);
 void printString(char *string);
@@ -22,24 +28,65 @@ void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan
 int mod(int dividend, int divisor);         // long apa int?
 int div(int numerator, int denominator);    // long apa int?
 
+void initDrawImage();
+void drawImage();
+void drawSquare();
+
 
 int main() {
+    
     char buff[256];
+    // mode = clearScreen(0);
+    int mode = interrupt(0x10,0x0013,0,0,0);
 
-    dump = clearScreen(0);
- 
+    char* image = &imageFile;
+    int address;
 
-    printString("Hello World\n");
+    int x_size = image[0];
+    int y_size = image[1];
 
     
-    readString(buff);
-    printString(buff);
+    // Coba bikin ketengah
+    int halfDif_x = div((max_X - x_size),2);
+    int halfDif_y = div((max_Y - y_size),2);
+
+    int x = 0;
+    int y = 0;
+    
+    int i = 2;
+
+    while (y < y_size) {
+        while (x < x_size) {
+            address = 320*y + x;
+            putInMemory(0xA000,address,image[i]);
+            i++;
+            x++;
+        }
+        x = halfDif_x;
+        y++;
+    }
+
+    // putInMemory(0xA000,2,0xE);
+    // putInMemory(0xA000,3,0xE);
+    // putInMemory(0xA000,4,0xE);
+    // putInMemory(0xA000,5,0xE);
+    // putInMemory(0xA000,6,0xE);
+    // putInMemory(0xA000,7,0xE);
+    // drawSomething();
+    // drawSquare();
+    // initDrawImage();
+
+    // printString("Hello World\n");
+
+    
+    // readString(buff);
+    // printString(buff);
     
     // makeInterrupt21();
     while (1);
 }
 
-int clearScreen(int mode) {
+int modeScreen(int mode) {
     /* mode 0 : default text
        mode 1 : text ART
        mode 2 : graphical
@@ -106,22 +153,57 @@ void readString(char* string) {
     }
     
 }
-/*
-void readString(char *string){
-    int i = 0;
-    while (string[i] != 0x0A && i<5){
-        string[i] = interrupt(0x16,0,0,0,0);
-        interrupt(0x10,0x0E00 + string[i],0,0,0);
-        i++;
+
+void drawSomething() {
+    char* image = &imageFile;
+    int address;
+
+    int x_size = image[0];
+    int y_size = image[1];
+
+    
+    // Coba bikin ketengah
+    // int halfDif_x = div((max_X - x_size),2);
+    // int halfDif_y = div((max_Y - y_size),2);
+
+    int x = 0;
+    int y = 0;
+    
+    int i = 2;
+
+    while (y < y_size) {
+        while (x < x_size) {
+            address = 320*y + x;
+            putInMemory(0xA000,address,image[i]);
+            i++;
+            x++;
+        }
+        x = 0;
+        y++;
     }
-    string[i] = '\0';   
-}*/
+}
 
 
-// void wait() {
-//     printString("Press Anything To Continue..");
-//     int ascii = interrupt(INT_16H,0,0,0,0);
-// }
+void drawSquare() {
+    int x = 0;
+    int y = 0;
+    int AL = 0x0C00;
+    
+    while (y < max_Y) {
+        while (x < max_X){
+            if ((x >= 100 && x <= 150) && (y >= 50 && y <= 100)) {
+                interrupt(INT_10H,AL + 14,0,x,y);
+            }
+
+            
+            x++;
+        }
+        x=0;
+        y++;
+    }   
+}
+
+
 
 
 void handleInterrupt21 (int AX, int BX, int CX, int DX){
