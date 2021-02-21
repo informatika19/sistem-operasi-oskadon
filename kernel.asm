@@ -10,6 +10,9 @@ global _makeInterrupt21
 extern _handleInterrupt21
 
 
+
+
+
 ;void putInMemory (int segment, int address, char character)
 _putInMemory:
 	push bp
@@ -80,5 +83,8 @@ _interrupt21ServiceRoutine:
 
 	iret
 
+
+; _imageFile:
+; 	incbin "image.bin"       ;include the raw image binary into the kernel
 
 

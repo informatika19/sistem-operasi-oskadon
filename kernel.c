@@ -16,7 +16,7 @@ int max_X = 320;
 int max_Y = 200;
 // int mode;
 
-extern char imageFile;
+
 
 
 void putInMemory (int segment, int address, char character);
@@ -31,8 +31,6 @@ void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan
 int mod(int dividend, int divisor);         // long apa int?
 int div(int numerator, int denominator);    // long apa int?
 
-void initDrawImage();
-void drawImage();
 void drawSquare();
 void drawSomething();
 
@@ -40,14 +38,14 @@ void drawSomething();
 int main() {
     char buff[256];
 
-    int dump = modeScreen(2);
+    int dump = modeScreen(0);
 
     
-    drawSomething();
+    // drawSomething();
 
-    // printString("Hello World\n");
-    // readString(buff);
-    // printString(buff);
+    printString("Hello World\n");
+    readString(buff);
+    printString(buff);
 
     
     while (1);
@@ -121,35 +119,36 @@ void readString(char* string) {
     
 }
 
-void drawSomething() {
-    char* image = &imageFile;
-    int address;
+// void drawSomething() {
+//     extern char imageFile;
+//     char* image = &imageFile;
+//     int address;
 
-    int x_size = image[0];
-    int y_size = image[1];
+//     int x_size = image[0];
+//     int y_size = image[1];
 
     
-    // Coba bikin ketengah
-    int halfDif_x = div((max_X - x_size),2);
-    int halfDif_y = div((max_Y - y_size),2);
+//     // Coba bikin ketengah
+//     int halfDif_x = div((max_X - x_size),2);
+//     int halfDif_y = div((max_Y - y_size),2);
 
-    int x = halfDif_x;
-    int y = halfDif_y;
+//     int x = halfDif_x;
+//     int y = halfDif_y;
     
-    int i = 2;
+//     int i = 2;
 
-    while (y < y_size + halfDif_y) {
-        while (x < x_size + halfDif_x) {
-            address = 320*y + x;
-            putInMemory(0xA000,address,image[i]);
-            i++;
-            x++;
-        }
-        x = halfDif_x;
-        y++;
-    }
-    // return;
-}
+//     while (y < y_size + halfDif_y) {
+//         while (x < x_size + halfDif_x) {
+//             address = 320*y + x;
+//             putInMemory(0xA000,address,image[i]);
+//             i++;
+//             x++;
+//         }
+//         x = halfDif_x;
+//         y++;
+//     }
+//     // return;
+// }
 
 
 void drawSquare() {
