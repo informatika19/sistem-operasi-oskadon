@@ -33,15 +33,23 @@ int div(int numerator, int denominator);    // long apa int?
 
 void drawSquare();
 void drawSomething();
+void asciiART();
 
 
 int main() {
     char buff[256];
 
+    // int dump = modeScreen(2);
+
+    // drawSquare();
+    // while(1);
     int dump = modeScreen(0);
 
-    
     // drawSomething();
+    handleInterrupt21(0,"\n",0,0);
+    asciiART();
+    handleInterrupt21(0,"\n",0,0);
+    handleInterrupt21(0,"\n",0,0);
 
     handleInterrupt21 (0, "Hello World\n", 0, 0);
     while (1) {
@@ -132,6 +140,23 @@ void readString(char* string) {
     
 }
 
+void asciiART() {
+    printString("  :'#######:::'######::'##:::'##::::'###::::'########:::'#######::'##::: ##:\n");
+    printString("  '##.... ##:'##... ##: ##::'##::::'## ##::: ##.... ##:'##.... ##: ###:: ##:\n");
+    printString("   ##:::: ##: ##:::..:: ##:'##::::'##:. ##:: ##:::: ##: ##:::: ##: ####: ##:\n");
+    printString("   ##:::: ##:. ######:: #####::::'##:::. ##: ##:::: ##: ##:::: ##: ## ## ##:\n");
+    printString("   ##:::: ##::..... ##: ##. ##::: #########: ##:::: ##: ##:::: ##: ##. ####:\n");
+    printString("   ##:::: ##:'##::: ##: ##:. ##:: ##.... ##: ##:::: ##: ##:::: ##: ##:. ###:\n");
+    printString("   ##:::: ##:'##::: ##: ##:. ##:: ##.... ##: ##:::: ##: ##:::: ##: ##:. ###:\n");
+    printString("  . #######::. ######:: ##::. ##: ##:::: ##: ########::. #######:: ##::. ##:\n");
+    printString("  :.......::::......:::..::::..::..:::::..::........::::.......:::..::::..::\n\n");
+    printString("                                 Created By:\n");
+    printString("                             - Ronggur (13519008)\n");
+    printString("                             - Azhar   (13519020)\n");
+    printString("                             - Alge    (13519039)\n");
+    
+}
+
 // void drawSomething() {
 //     extern char imageFile;
 //     char* image = &imageFile;
@@ -174,8 +199,6 @@ void drawSquare() {
             if ((x >= 100 && x <= 150) && (y >= 50 && y <= 100)) {
                 interrupt(INT_10H,AL + 14,0,x,y);
             }
-
-            
             x++;
         }
         x=0;
