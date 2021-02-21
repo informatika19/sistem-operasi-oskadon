@@ -20,8 +20,10 @@ extern char imageFile;
 
 void putInMemory (int segment, int address, char character);
 int modeScreen(int mode);
+
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 int interrupt(int number, int AX, int BX, int CX, int DX);
+
 void printString(char *string);
 void readString(char *string);
 void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
@@ -47,22 +49,22 @@ int main() {
 
     
     // Coba bikin ketengah
-    int halfDif_x = div((max_X - x_size),2);
-    int halfDif_y = div((max_Y - y_size),2);
+    int halfDif_x = (max_X - x_size)/2;
+    int halfDif_y = (max_Y - y_size)/2;
 
-    int x = 0;
+    int x = 10;
     int y = 0;
     
     int i = 2;
 
     while (y < y_size) {
-        while (x < x_size) {
+        while (x < x_size+10) {
             address = 320*y + x;
             putInMemory(0xA000,address,image[i]);
             i++;
             x++;
         }
-        x = halfDif_x;
+        x = 10;
         y++;
     }
 
