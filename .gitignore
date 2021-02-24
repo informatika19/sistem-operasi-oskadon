@@ -3,10 +3,14 @@ application/cache
 kernel
 kernel.o
 system.img
-
+external_asm.o
 if2230.config
-
+kernel_asm.o
 lib.asm
 Bochs 2.6.11.lnk
 bochsout.txt
 bochsout.txt
+*.o
+bootloader
+Tutorial/
+image2binary/
