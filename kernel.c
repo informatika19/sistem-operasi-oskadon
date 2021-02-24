@@ -11,55 +11,53 @@ int ff = 0xc;       // form feed (\f)
 int cr = 0xd;       // carriage return (\r) (enter)
 int esc = 0x1b;     // escape (\e)
 
-// Graphic
+// Graphic mode
 int max_X = 320;
 int max_Y = 200;
 // int mode;
 
 
 
-
+// Fungsi Bawaan
 void putInMemory (int segment, int address, char character);
-int modeScreen(int mode);
-
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 int interrupt(int number, int AX, int BX, int CX, int DX);
-
 void printString(char *string);
 void readString(char *string);
+
+// Fungsi Penunjang
 void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
 int mod(int dividend, int divisor);         // long apa int?
 int div(int numerator, int denominator);    // long apa int?
 
+// Fungsi Graphic dan Hiasan
+int modeScreen(int mode);
 void drawSquare();
 void drawSomething();
 void asciiART();
 
 
 int main() {
-    char buff[1024];
+    char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
+    int dump = interrupt(0x10,0x0003,0,0,0);    // Ganti mode menjadi text mode (Sekalian clear screen)
 
-    // int dump = modeScreen(2);
-
-    // drawSquare();
-    // while(1);
-    // int dump = modeScreen(0);
-    int dump = interrupt(0x10,0x0003,0,0,0);
-    interrupt(0x10,0x0200,0,22,3);
-    // drawSomething();
+    // Tampilkan tampilan awal bios dengan ASCII ART
     handleInterrupt21(0,"\n",0,0);
     asciiART();
     handleInterrupt21(0,"\n",0,0);
     handleInterrupt21(0,"\n",0,0);
 
+    // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
     while (1) {
+        // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
         handleInterrupt21 (1, buff, 0, 0);
         handleInterrupt21 (0, buff, 0, 0);
         handleInterrupt21 (0, "\n", 0, 0);
     };
 }
 
+// Mode yang tersedia dan dapat digunakan
 int modeScreen(int mode) {
     /* mode 0 : default text
        mode 1 : text ART
@@ -80,6 +78,7 @@ int modeScreen(int mode) {
     return;
 }
 
+// Membuat Interupt21 (DOS Interupt) untuk menjalankan perintah dari pengguna
 void handleInterrupt21 (int AX, int BX, int CX, int DX){
     switch (AX) {
         case 0x0:
@@ -93,6 +92,7 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX){
     }
 }
 
+// Menampilkan string/tulisan pada layar
 void printString(char *string) {
     int AL = 0x0E00;
     int i = 0;
@@ -109,7 +109,7 @@ void printString(char *string) {
     
 }
 
-
+// Membaca input dari pengguna
 void readString(char* string) {    
     int AL = 0x0E00;
     int loop = 1;
@@ -135,12 +135,11 @@ void readString(char* string) {
             string[i] = ascii;
             interrupt(INT_10H,AL+ascii,0,0,0);
             i++;
-        }
-         
-    }
-    
+        }      
+    }   
 }
 
+// Bonus - ASCII ART
 void asciiART() {
     printString("  :'#######:::'######::'##:::'##::::'###::::'########:::'#######::'##::: ##:\n");
     printString("  '##.... ##:'##... ##: ##::'##::::'## ##::: ##.... ##:'##.... ##: ###:: ##:\n");
@@ -159,8 +158,7 @@ void asciiART() {
 }
 
 
-
-
+// Menggambar kotak pada mode 13h
 void drawSquare() {
     int x = 0;
     int y = 0;
@@ -179,7 +177,7 @@ void drawSquare() {
 }
 
 
-// clear
+// Clear Screen
 void clear(char* buffer, int length){
     int i = 0;
     while (i < length) {
@@ -188,7 +186,7 @@ void clear(char* buffer, int length){
     
 }
 
-// modulo
+// Modulo
 int mod(int dividend, int divisor){
     while (dividend >= divisor){
         dividend -= divisor;
@@ -196,7 +194,7 @@ int mod(int dividend, int divisor){
     return dividend;
 }
 
-// division
+// Divison
 int div(int numerator, int denominator){
     int res = 0;
     while (numerator >= denominator * res){
@@ -206,6 +204,8 @@ int div(int numerator, int denominator){
     return res;
 }
 
+
+// Menggambar image di mode13, error jangan digunakan
 // void drawSomething() {
 //     extern char imageFile;
 //     char* image = &imageFile;
