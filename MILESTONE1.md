@@ -20,3 +20,16 @@ Prosedur putInMemory memiliki tigs parameter. Pertama adalah segment (int) yaitu
 Fungsi interrupt berguna untuk melakukan interrupt dengan memanggil nomor interrupt yang diinginkan. Interrupt juga mengambil parameter lainnya yaitu AX, BX, CX, dan DX untuk menspesifikkan value interrupt selain dari register AL. 
 
 Selanjutnya ada prosedur makeInterrupt21. Prosedur ini digunakan untuk membuat vector interrupt 0x21 (33 dalam desimal) yang akan mengambil vector ke-34 dalam interrupt table sebagai MS-DOS API call. makeInterrupt21 akan mengambil address dari interrupt21ServiceRoutine guna memanggil fungsi eksternal handleInterrupt21 dari kernel.c. handleInterrup21 inilah yang akan menjalankan instruksi printString (mencetak string ke layar) dan readString (membaca masukan string dari user). Instruksi ini bergantung pada input parameter AX di handleInterrupt21, jika AX = 0x0 maka printString dan jika AX = 0x1 maka readString.
+
+## Requirement
+- nasm, bcc, bin86, bochs, bochs-x
+- Pada sistem operasi Ubuntu dapat langsung didapatkan dengan menjalankan perintah pada terminal sebagai berikut
+```
+sudo apt update
+sudo apt install nasm bcc bin86 bochs bochs-x
+```
+
+## Cara Menggunakan
+- Siapkan disk image, compile dan masukkan bootloader ke dalam disk image tersebut. Dapat langsung menggunakan perintah `bash ./initialization.sh` pada terminal linux
+- Compile kernel lalu masukkan ke dalam disk image. Dapat langsung dijalankan dengan perintah `bash ./script.sh` pada terminal linux.
+
