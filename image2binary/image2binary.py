@@ -2,7 +2,7 @@
 from PIL import Image                                         #Import Image from Pillow
 
 paletteFile = "colors.png"                                    #palette the BIOS uses
-convertFile = "wibu.png"                                       #image to turn into a binary
+convertFile = "jokowow.png"                                       #image to turn into a binary
 outputFile  = "image.bin"                                     #name of output file
 
 pal = Image.open(paletteFile).convert('RGB')

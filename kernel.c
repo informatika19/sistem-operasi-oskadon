@@ -37,14 +37,15 @@ void asciiART();
 
 
 int main() {
-    char buff[256];
+    char buff[1024];
 
     // int dump = modeScreen(2);
 
     // drawSquare();
     // while(1);
-    int dump = modeScreen(0);
-
+    // int dump = modeScreen(0);
+    int dump = interrupt(0x10,0x0003,0,0,0);
+    interrupt(0x10,0x0200,0,22,3);
     // drawSomething();
     handleInterrupt21(0,"\n",0,0);
     asciiART();
@@ -96,11 +97,11 @@ void printString(char *string) {
     int AL = 0x0E00;
     int i = 0;
     while (string[i] != '\0') {
-        interrupt(INT_10H, AL + string[i],0,0,0);
+        interrupt(INT_10H, AL + string[i],0x000F,0,0);
 
         if (string[i] == '\n') {
             // interrupt(INT_10H,AL+lf,0,0,0);
-            interrupt(INT_10H,AL+cr,0,0,0);
+            interrupt(INT_10H,AL+cr,0x000F,0,0);
         }
         i++;
     }
@@ -124,7 +125,7 @@ void readString(char* string) {
             interrupt(INT_10H,AL+cr,0,0,0);
             loop = 0;
         } else if (ascii == bs) {
-            if (i > 0) {
+            if (i > 0 && mod(i,80) != 0) {
                 interrupt(INT_10H,AL+bs,0,0,0);
                 interrupt(INT_10H,AL+nul,0,0,0);
                 interrupt(INT_10H,AL+bs,0,0,0);
@@ -157,6 +158,54 @@ void asciiART() {
     
 }
 
+
+
+
+void drawSquare() {
+    int x = 0;
+    int y = 0;
+    int AL = 0x0C00;
+    
+    while (y < max_Y) {
+        while (x < max_X){
+            if ((x >= 100 && x <= 150) && (y >= 50 && y <= 100)) {
+                interrupt(INT_10H,AL + 14,0,x,y);
+            }
+            x++;
+        }
+        x=0;
+        y++;
+    }   
+}
+
+
+// clear
+void clear(char* buffer, int length){
+    int i = 0;
+    while (i < length) {
+        buffer[i] = 0x0;
+    }
+    
+}
+
+// modulo
+int mod(int dividend, int divisor){
+    while (dividend >= divisor){
+        dividend -= divisor;
+    }
+    return dividend;
+}
+
+// division
+int div(int numerator, int denominator){
+    int res = 0;
+    while (numerator >= denominator * res){
+        res += 1;
+    }
+    res -= 1;
+    return res;
+}
+
 // void drawSomething() {
 //     extern char imageFile;
 //     char* image = &imageFile;
@@ -187,53 +236,3 @@ void asciiART() {
 //     }
 //     // return;
 // }
-
-
-void drawSquare() {
-    int x = 0;
-    int y = 0;
-    int AL = 0x0C00;
-    
-    while (y < max_Y) {
-        while (x < max_X){
-            if ((x >= 100 && x <= 150) && (y >= 50 && y <= 100)) {
-                interrupt(INT_10H,AL + 14,0,x,y);
-            }
-            x++;
-        }
-        x=0;
-        y++;
-    }   
-}
-
-
-
-
-
-
-// clear
-void clear(char* buffer, int length){
-    int i = 0;
-    while (i < length) {
-        buffer[i] = 0x0;
-    }
-    
-}
-
-// modulo
-int mod(int dividend, int divisor){
-    while (dividend >= divisor){
-        dividend -= divisor;
-    }
-    return dividend;
-}
-
-// division
-int div(int numerator, int denominator){
-    int res = 0;
-    while (numerator >= denominator * res){
-        res += 1;
-    }
-    res -= 1;
-    return res;
-}
