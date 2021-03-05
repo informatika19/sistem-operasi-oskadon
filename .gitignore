@@ -1,14 +1,8 @@
 application/cache
 **/Tutorial
-kernel
-kernel.o
 system.img
-external_asm.o
-kernel_asm.o
-lib.asm
 Bochs 2.6.11.lnk
 *.txt
 *.o
 bootloader
-Tutorial/
-image2binary/
+kernel
