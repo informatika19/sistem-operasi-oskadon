@@ -1,6 +1,7 @@
 
 // KAMUS
 #define INT_10H 0x10
+#define INT_13H 0x13
 #define INT_16H 0x16
 int nul = 0x0;      // null (\0)
 int bs = 0x8;       // backspace (\b)
@@ -17,13 +18,18 @@ int max_Y = 200;
 // int mode;
 
 
-
 // Fungsi Bawaan
 void putInMemory (int segment, int address, char character);
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 int interrupt(int number, int AX, int BX, int CX, int DX);
+
+// Milestone 1
 void printString(char *string);
 void readString(char *string);
+
+// Milestone 2
+void readSector(char *buffer, int sector);
+void writeSector(char *buffer, int sector);
 
 // Fungsi Penunjang
 void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
@@ -138,6 +144,28 @@ void readString(char* string) {
         }      
     }   
 }
+
+
+void readSector(char *buffer, int sector) {
+    int AL = 0x0200;
+    int num = 0x01;
+    int cs = div(sector, 36) * 0x100 + mod(sector, 18) + 1;
+    int hd = mod(div(sector, 18), 2) * 0x100;
+    interrupt(INT_13H, AL+num, buffer, cs, hd);
+}
+
+void writeSector(char *buffer, int sector) {
+    int AL = 0x0300;
+    int num = 0x01;
+    int cs = div(sector, 36) * 0x100 + mod(sector, 18) + 1;
+    int hd = mod(div(sector, 18), 2) * 0x100;
+    interrupt(INT_13H, AL+num, buffer, cs, hd);
+}
+
+
+
+
+
 
 // Bonus - ASCII ART
 void asciiART() {
