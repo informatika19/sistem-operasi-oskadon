@@ -3,6 +3,11 @@
 #define INT_10H 0x10
 #define INT_13H 0x13
 #define INT_16H 0x16
+
+#define bool unsigned char
+#define true 1
+#define false 0
+
 int nul = 0x0;      // null (\0)
 int bs = 0x8;       // backspace (\b)
 int ht = 0x9;       // horizontal tab (\t)
@@ -30,11 +35,14 @@ void readString(char *string);
 // Milestone 2
 void readSector(char *buffer, int sector);
 void writeSector(char *buffer, int sector);
+int writeFile(char *buffer, char *path, int *sectors, char parentIndex);
+void readFile(char *buffer, char *path, int *result, char parentIndex);
 
 // Fungsi Penunjang
 void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
 int mod(int dividend, int divisor);         // long apa int?
 int div(int numerator, int denominator);    // long apa int?
+int strlen(char* buff);
 
 // Fungsi Graphic dan Hiasan
 int modeScreen(int mode);
@@ -46,6 +54,15 @@ void asciiART();
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
     int dump = interrupt(0x10,0x0003,0,0,0);    // Ganti mode menjadi text mode (Sekalian clear screen)
+    char b1[512];
+    char b2[512];
+    int* sectors;
+    *sectors = 1;
+    
+
+    b1[0] = 0x54;
+    b1[1] = 0x55;
+    b1[2] = 0x00;
 
     // Tampilkan tampilan awal bios dengan ASCII ART
     handleInterrupt21(0,"\n",0,0);
@@ -55,6 +72,11 @@ int main() {
 
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
+    // writeFile(b1,"cek4",sectors,0xF4);
+    // writeSector(b1,0x104);
+    readSector(b2,0x103+32+2*16);
+    printString(b2);
+    
     while (1) {
         // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
         handleInterrupt21 (1, buff, 0, 0);
@@ -62,6 +84,7 @@ int main() {
         handleInterrupt21 (0, "\n", 0, 0);
     };
 }
+
 
 // Mode yang tersedia dan dapat digunakan
 int modeScreen(int mode) {
@@ -162,6 +185,98 @@ void writeSector(char *buffer, int sector) {
     interrupt(INT_13H, AL+num, buffer, cs, hd);
 }
 
+int writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
+    // int* sectors dimanfaatin buat jadi jumlah sector
+    // KAMUS
+    char map[512];
+    char dir[1024];
+    int sec = 0x103;
+    bool found = false;
+    int dirIdx = 0;               // idx dir
+    int dirNum = 16*dirIdx;       // alamat dir
+    int secIdx = 0;               // idx sector
+    int secNum = 32+secIdx*16;    // idx map ke sector (alamat dir)
+    int i, j, k;
+    char partBuff[512];
+    
+    
+    // 1. Baca Sektor Map dan Dir
+    readSector(map,0x100);
+    readSector(dir,0x101);
+    readSector(dir+512,0x102);
+    
+    // 2. Cek dir yang kosong
+    while (dirIdx < 32 && !found) {     // ada 32 dir yang bisa diisi
+        if (dir[dirNum] == 0x00 && dir[dirNum+1] == 0x00 && dir[dirNum+2] == 0x00){    // Kemungkinan ada bug
+			found = true;
+		} else {
+            dirIdx++;
+            dirNum = 16*dirIdx;
+            // printString("i\n");
+        }
+    }
+
+    if (!found) {
+        printString("Tidak cukup entri di files");
+        return -2;
+    }
+
+    //  3. Cek jumlah sektor di map cukup untuk buffer file
+    // Note, 32 sector sudah dipakai untuk kernel
+    // 1 File mengisi 16 sector (asumsi jadiin chunk gini)
+    // 1 sector memuat 512 byte, buff panjangnya kelipatan 512;
+    found = false;
+    
+    while(secIdx < 16 && !found) {
+        if (map[secNum] == 0x00) {
+            found = true;
+        } else {
+            secIdx++;
+            secNum = 32+secIdx*16;
+        }
+    }
+
+    if (!found) {
+        printString("Tidak cukup sektor kosong");
+        return -3;
+    }
+
+    // 4. Bersihkan sektor (dir) yang akan digunakan untuk menyimpan nama file
+    dir[dirNum] = parentIndex;
+    dir[dirNum+1] = secIdx;
+    i = dirNum + 2;
+    // 5. Isi Sektor pada Dir dengan nama file
+    // untuk sekarang asumsi jadi nama file dulu si path itu
+    j = 0;
+    while (i < dirNum+16 && j < strlen(path)) { 
+        dir[i] = path[j];
+        i++;
+        j++;
+    }
+    while (i < dirNum+16) {    // Padding yang kosong
+        dir[i] = 0x0;
+        i++;
+    }
+
+    // 6. Cari Sektor di Map yang kosong (sudah ketemu)
+    // 7. Tulis Semua Buffer
+    // secNum = 32+secIdx*16    // 32 sector kernel, secIdx*16 karena setiap file ada 16 sector + i
+    for (i = 0; i < *sectors; i++) {
+        map[secNum+i] = 0xFF;
+        for (j = 0; j < 512; j++) {
+            partBuff[j] = buffer[j+512*i];
+        } 
+        writeSector(partBuff,sec+secNum+i);
+        
+    }
+
+    writeSector(map,0x100);
+	writeSector(dir,0x101);
+    writeSector(dir+512,0x102);
+    printString("Berhasil!");
+    return 0;
+}
+
 
 
 
@@ -230,6 +345,15 @@ int div(int numerator, int denominator){
     }
     res -= 1;
     return res;
+}
+
+int strlen(char* buff) {
+    int i = 0;
+    while (buff[i] != '\0') {
+        i++;
+    }
+    return i;
+    
 }
 
 
