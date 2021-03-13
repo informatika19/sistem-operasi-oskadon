@@ -1,7 +1,6 @@
 application/cache
-**/Tutorial
+**/image2binary
 system.img
-Bochs 2.6.11.lnk
 *.txt
 *.o
 bootloader

@@ -59,32 +59,30 @@ void asciiART();
 
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
-    int dump = interrupt(0x10,0x0003,0,0,0);    // Ganti mode menjadi text mode (Sekalian clear screen)
-    char b1[512];
-    char b2[512];
-    int* sectors;
+    int dump;
     
-    b1[0] = 0x56;
-    b1[1] = 0x57;
-    b1[2] = 0x58;
+    // Tampilkan tampilan awal bios dengan graphic
+    dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
+    drawSomething();
+    interrupt(0x15,0x8600,0,100,0); // wait 1000 ms
 
     // Tampilkan tampilan awal bios dengan ASCII ART
-    handleInterrupt21(0,"\n",0,0);
-    asciiART();
-    handleInterrupt21(0,"\n",0,0);
-    handleInterrupt21(0,"\n",0,0);
+    dump = modeScreen(0);    // Ganti mode menjadi text mode (Sekalian clear screen)
+    // handleInterrupt21(0,"\n",0,0);
+    // asciiART();
+    // handleInterrupt21(0,"\n",0,0);
+    // handleInterrupt21(0,"\n",0,0);
 
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
+    
+    // Test writeFile
     // printString("t0\n");
-    writeFile(b1,"sys/bin/cek15",sectors,0xFF);
+    // writeFile(b1,"sys/bin/cek15",sectors,0xFF);
     // writeSector(b1,0x104);
     // readSector(b2,0x103+32+3*);
     // printString(b2);
 
-    // if(strcmp(fileName,"cek10")){
-    //        printString("sama\n");
-    // }
 
     while (1) {
         // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
@@ -528,33 +526,54 @@ int strcmp(char* a, char* b){
 }
 
 // Menggambar image di mode13, error jangan digunakan
-// void drawSomething() {
-//     extern char imageFile;
-//     char* image = &imageFile;
-//     int address;
-
-//     int x_size = image[0];
-//     int y_size = image[1];
+void drawSomething() {
+    char image[512];
+    int sec = 1024;
+    int address;
+    int x_size;
+    int y_size;
+    int halfDif_x;
+    int halfDif_y;
+    int x,y,i,nSec;
 
     
-//     // Coba bikin ketengah
-//     int halfDif_x = div((max_X - x_size),2);
-//     int halfDif_y = div((max_Y - y_size),2);
-
-//     int x = halfDif_x;
-//     int y = halfDif_y;
+    nSec = 0;
+    readSector(image,sec + nSec);
     
-//     int i = 2;
+    
+    x_size = image[0];
+    y_size = image[1];
 
-//     while (y < y_size + halfDif_y) {
-//         while (x < x_size + halfDif_x) {
-//             address = 320*y + x;
-//             putInMemory(0xA000,address,image[i]);
-//             i++;
-//             x++;
-//         }
-//         x = halfDif_x;
-//         y++;
-//     }
-//     // return;
-// }
+    // printString("x: ");
+    // printString(x_size);
+    // printString("\ny: ");
+    // printString(y_size);
+
+    
+    // Coba bikin ketengah
+    halfDif_x = div((max_X - x_size),2);
+    halfDif_y = div((max_Y - y_size),2);
+
+    x = halfDif_x;
+    y = halfDif_y;
+    
+    i = 2;
+
+    while (y < y_size + halfDif_y) {
+        while (x < x_size + halfDif_x) {
+            if (i >= 512) {
+                nSec++;
+                readSector(image,sec + nSec);
+                i = 0; 
+                // printString("a");
+            }
+            address = 320*y + x;
+            putInMemory(0xA000,address,image[i]);
+            i++;
+            x++;
+        }
+        x = halfDif_x;
+        y++;
+    }
+    // // return;
+}
