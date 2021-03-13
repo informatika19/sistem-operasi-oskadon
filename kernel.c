@@ -43,7 +43,7 @@ void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan
 int mod(int dividend, int divisor);         // long apa int?
 int div(int numerator, int denominator);    // long apa int?
 int strlen(char* buff);
-
+int strcmp(char* a, char* b);
 // Fungsi Graphic dan Hiasan
 int modeScreen(int mode);
 void drawSquare();
@@ -57,6 +57,7 @@ int main() {
     char b1[512];
     char b2[512];
     int* sectors;
+    char* cmd;
     *sectors = 1;
     
 
@@ -74,14 +75,18 @@ int main() {
     handleInterrupt21 (0, "Hello World\n", 0, 0);
     // writeFile(b1,"cek4",sectors,0xF4);
     // writeSector(b1,0x104);
-    readSector(b2,0x103+32+2*16);
+    readSector(b2,0x100);
     printString(b2);
     
     while (1) {
         // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
-        handleInterrupt21 (1, buff, 0, 0);
-        handleInterrupt21 (0, buff, 0, 0);
-        handleInterrupt21 (0, "\n", 0, 0);
+        
+        readString(cmd);
+        //if(strcmp(cmd,"c")){
+        //    printString("calling cd\n");
+        //}
+        //launchProgram()
+        printString(cmd);
     };
 }
 
@@ -355,7 +360,25 @@ int strlen(char* buff) {
     return i;
     
 }
-
+int strcmp(char* a, char* b){
+    int lenA;
+    int i;
+    printString("calling strcmp");
+    printString(a);
+    printString(b);
+    lenA = strlen(a);
+    if(lenA != strlen(b)){
+        return 0;
+    }
+    i = 0;
+    while(i < lenA){
+        if(a[i] != b[i]){
+            return 0;
+        }
+        i++;
+    }
+    return 1;
+}
 
 // Menggambar image di mode13, error jangan digunakan
 // void drawSomething() {
