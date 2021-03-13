@@ -54,10 +54,14 @@ void asciiART();
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
     int dump = interrupt(0x10,0x0003,0,0,0);    // Ganti mode menjadi text mode (Sekalian clear screen)
-    char b1[1024];
+    char b1[512];
     char b2[512];
+    int* sectors;
+    char fileName[15];
     
-    
+    b1[0] = 0x50;
+    b1[1] = 0x51;
+    b2[2] = 0x52;
 
     // Tampilkan tampilan awal bios dengan ASCII ART
     handleInterrupt21(0,"\n",0,0);
@@ -67,20 +71,25 @@ int main() {
 
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
-    // writeFile(b1,"cek5",sectors,0xF5);
+    writeFile(b1,"cek11",sectors,0xFF);
     // writeSector(b1,0x104);
-    readSector(b2,0x103+32+3*16+1);
-    printString(b2);
-    
+    // readSector(b2,0x103+32+3*);
+    // printString(b2);
+
+    // if(strcmp(fileName,"cek10")){
+    //        printString("sama\n");
+    // }
+
     while (1) {
         // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
         
-        readString(cmd);
+        readString(buff);
         //if(strcmp(cmd,"c")){
         //    printString("calling cd\n");
         //}
         //launchProgram()
-        printString(cmd);
+        printString(buff);
+        printString('\n');
     };
 }
 
@@ -185,7 +194,7 @@ void writeSector(char *buffer, int sector) {
 }
 
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
-    // int* sectors dimanfaatin buat jadi jumlah sector, // path jadi nama
+    // path jadi nama
     // KAMUS
     char map[512];
     char dir[1024];
@@ -217,18 +226,21 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
         }
     }
     if (!found) {
-        printString("Tidak cukup entri di files");
+        printString("Tidak cukup entri di files\n");
         *sectors = -2;
         return;
     }
 
     // 2a. Cek parrent folder valid
     found = false;
-    if (dir[16*parentIndex+1] == 0xFF) {    // sebuah folder
+    if (parentIndex == 0xFF) { // folder di root
+        found = true;
+    } else if (dir[16*parentIndex+1] == 0xFF) { // sebuah folder
         found = true;
     }
+
     if (!found) {
-        printString("Folder tidak valid");
+        printString("Folder tidak valid\n");
         *sectors = -4;
         return;
     }
@@ -238,19 +250,18 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     found = false;
     while (i < 64 && !found) {
         if (dir[16*i] == parentIndex) { // kalau ternyata ada yang parent indexnya sama
-            for (j = 0; i < 14; i++) {
-                fileName[j] = dir[16*i+2+j];    // cek apakah namanya sama
+            for (j = 0; j < 14; j++) {
+                fileName[j] = dir[16*i+(2+j)];    // cek apakah namanya sama
             }
             fileName[14] = '\0';
             if (strcmp(fileName,path)) {
                 found = true;
             }
-		} else {
-            i++;
-        }
+		}
+        i++; 
     }
-    if (!found) {
-        printString("File sudah ada");
+    if (found) {
+        printString("File sudah ada\n");
         *sectors = -1;
         return;
     }
@@ -261,7 +272,6 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     // 1 File mengisi 16 sector (asumsi jadiin chunk gini)
     // 1 sector memuat 512 byte, buff panjangnya kelipatan 512;
     found = false;
-    
     while(secIdx < 32 && !found) {
         if (map[secNum] == 0x00) {
             found = true;
@@ -272,7 +282,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     }
 
     if (!found) {
-        printString("Tidak cukup sektor kosong");
+        printString("Tidak cukup sektor kosong\n");
         sectors = -3;
         return;
     }
@@ -304,7 +314,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
         for (j = 0; j < 512; j++) {
             partBuff[j] = buffer[j+512*i];
         } 
-        writeSector(partBuff,sec+secNum+i); 
+        // writeSector(partBuff,sec+secNum+i); 
     }
     
 
@@ -397,9 +407,7 @@ int strlen(char* buff) {
 int strcmp(char* a, char* b){
     int lenA;
     int i;
-    printString("calling strcmp");
-    printString(a);
-    printString(b);
+    
     lenA = strlen(a);
     if(lenA != strlen(b)){
         return 0;
