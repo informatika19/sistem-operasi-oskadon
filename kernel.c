@@ -71,7 +71,7 @@ int main() {
 
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
-    writeFile(b1,"cek11",sectors,0xFF);
+    writeFile(b1,"cek1",sectors,0xFF);
     // writeSector(b1,0x104);
     // readSector(b2,0x103+32+3*);
     // printString(b2);
@@ -203,7 +203,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     int dirIdx = 0;               // idx dir
     int dirNum = 16*dirIdx;       // alamat dir
     int secIdx = 0;               // idx sector
-    int secNum = 32+secIdx*16;    // idx map ke sector (alamat dir)
+    int secNum = 16*secIdx;       // idx map ke sector (alamat dir)
     int countSec = 0;
     int i, j, k;
     char partBuff[512];
@@ -268,16 +268,16 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
 
 
     //  3. Cek jumlah sektor di map cukup untuk buffer file
-    // Note, 32 sector sudah dipakai untuk kernel, tersedia 32 sectorIdx
     // 1 File mengisi 16 sector (asumsi jadiin chunk gini)
-    // 1 sector memuat 512 byte, buff panjangnya kelipatan 512;
+    // Terdapat 32 secIdx yang bisa diisi (chunk), dengan 1 chunk berisi 16 sektor
+    // 1 sector memuat 512 byte
     found = false;
     while(secIdx < 32 && !found) {
         if (map[secNum] == 0x00) {
             found = true;
         } else {
             secIdx++;
-            secNum = 32+secIdx*16;
+            secNum = 16*secIdx;
         }
     }
 
@@ -314,7 +314,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
         for (j = 0; j < 512; j++) {
             partBuff[j] = buffer[j+512*i];
         } 
-        // writeSector(partBuff,sec+secNum+i); 
+        writeSector(partBuff,sec+secNum+i); 
     }
     
 
