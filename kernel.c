@@ -38,7 +38,13 @@ void writeSector(char *buffer, int sector);
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex);
 void readFile(char *buffer, char *path, int *result, char parentIndex);
 
-// Fungsi Penunjang
+// Fungsi Penunjang 1
+bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx);
+int foundEmptyDir(char* dir);
+void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name);
+
+
+// Fungsi Penunjang 2
 void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
 int mod(int dividend, int divisor);         
 int div(int numerator, int denominator);    
@@ -57,11 +63,10 @@ int main() {
     char b1[512];
     char b2[512];
     int* sectors;
-    char fileName[15];
     
-    b1[0] = 0x50;
-    b1[1] = 0x51;
-    b2[2] = 0x52;
+    b1[0] = 0x56;
+    b1[1] = 0x57;
+    b1[2] = 0x58;
 
     // Tampilkan tampilan awal bios dengan ASCII ART
     handleInterrupt21(0,"\n",0,0);
@@ -71,7 +76,8 @@ int main() {
 
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
-    writeFile(b1,"cek1",sectors,0xFF);
+    // printString("t0\n");
+    writeFile(b1,"sys/bin/cek15",sectors,0xFF);
     // writeSector(b1,0x104);
     // readSector(b2,0x103+32+3*);
     // printString(b2);
@@ -89,7 +95,7 @@ int main() {
         //}
         //launchProgram()
         printString(buff);
-        printString('\n');
+        printString("\n");
     };
 }
 
@@ -196,42 +202,49 @@ void writeSector(char *buffer, int sector) {
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     // path jadi nama
     // KAMUS
+    
     char map[512];
     char dir[1024];
     int sec = 0x103;
     bool found = false;
     int dirIdx = 0;               // idx dir
     int dirNum = 16*dirIdx;       // alamat dir
+    int dirFree = 0;
+    int dirNeed = 0;
     int secIdx = 0;               // idx sector
     int secNum = 16*secIdx;       // idx map ke sector (alamat dir)
     int countSec = 0;
-    int i, j, k;
-    char partBuff[512];
-    char fileName[15];
+    int i, j, k, l;
+    char buffSec[512];
+    char buffName[15];
+    char currFlName[128];
+    char currParentIdx;
+    int *foundIdx;
     
-    
+    // printString("t1\n");
     // 1. Baca Sektor Map dan Dir
     readSector(map,0x100);
     readSector(dir,0x101);
     readSector(dir+512,0x102);
     
     // 2. Cek dir yang kosong
-    while (dirIdx < 64 && !found) {     // ada 64 dir yang bisa diisi
+    while (dirIdx < 64) {     // ada 64 dir yang bisa diisi
+        // printString("t1a\n");
         if (dir[dirNum] == 0x00 && dir[dirNum+1] == 0x00 && dir[dirNum+2] == 0x00){    // Kemungkinan ada bug
-			found = true;
-		} else {
-            dirIdx++;
-            dirNum = 16*dirIdx;
-            // printString("i\n");
-        }
+            dirFree++;
+		} 
+        dirIdx++;
+        dirNum = 16*dirIdx;
+        
     }
-    if (!found) {
+    
+    if (dirFree == 0) {
         printString("Tidak cukup entri di files\n");
         *sectors = -2;
         return;
     }
-
-    // 2a. Cek parrent folder valid
+    // printString("t2\n");
+    // 3. Cek parrent folder valid
     found = false;
     if (parentIndex == 0xFF) { // folder di root
         found = true;
@@ -244,30 +257,70 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
         *sectors = -4;
         return;
     }
+    
 
-    // 2b. Cek apakah sudah ada file yang sama
+    // 4a. Atur bagian path
+    // Hitung ada berapa dir yang harus dibuat
     i = 0;
-    found = false;
-    while (i < 64 && !found) {
-        if (dir[16*i] == parentIndex) { // kalau ternyata ada yang parent indexnya sama
-            for (j = 0; j < 14; j++) {
-                fileName[j] = dir[16*i+(2+j)];    // cek apakah namanya sama
-            }
-            fileName[14] = '\0';
-            if (strcmp(fileName,path)) {
-                found = true;
-            }
-		}
-        i++; 
+    while (path[i] != '\0') {
+        if (path[i] == '/') {  // Hitung ada berapa folder
+            dirNeed++;
+        }
+        i++;
     }
+    dirNeed++;  // Tambah 1 file
+
+    // Cek apakah jumlah dir tidak cukup
+    if (dirNeed > dirFree) {
+        printString("Tidak cukup entri di files\n");
+        *sectors = -2;
+        return;
+    }
+
+    // 3b. Buat folder
+    i = 0;
+    j = 0;
+    currParentIdx = parentIndex;
+    while (path[i] != '\0') {
+        currFlName[j] = path[i];
+        if (currFlName[j] == '/') {
+            currFlName[j] = '\0';
+            // Cek apakah sudah tersedia folder yang sama
+            found = isFlExist(dir,currParentIdx,currFlName,true,foundIdx);
+            if (found) {
+                printString("Folder sudah ada\n");
+                currParentIdx = *foundIdx;
+                // printString(currParentIdx);
+            } else {
+                // cari dir yang kosong
+                dirIdx = foundEmptyDir(dir);
+                dirNum = dirIdx*16;
+                // buat folder baru
+                writeDir(dir,dirNum,currParentIdx,0xFF,currFlName);
+
+                currParentIdx = dirIdx;
+            }
+            j = 0;
+        } else {
+            j++;
+        }
+        i++;
+    }
+
+    // 4. Buat File
+    // 4a. Cek apakah sudah file udah ada
+    found = isFlExist(dir,currParentIdx,currFlName,false,foundIdx);
     if (found) {
         printString("File sudah ada\n");
         *sectors = -1;
         return;
     }
+    // cari dir yang kosong
+    dirIdx = foundEmptyDir(dir);
+    dirNum = dirIdx*16;
 
 
-    //  3. Cek jumlah sektor di map cukup untuk buffer file
+    // 4b. Cek jumlah sektor di map cukup untuk buffer file
     // 1 File mengisi 16 sector (asumsi jadiin chunk gini)
     // Terdapat 32 secIdx yang bisa diisi (chunk), dengan 1 chunk berisi 16 sektor
     // 1 sector memuat 512 byte
@@ -280,41 +333,27 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
             secNum = 16*secIdx;
         }
     }
-
     if (!found) {
         printString("Tidak cukup sektor kosong\n");
         sectors = -3;
         return;
     }
 
-    // 4. Bersihkan sektor (dir) yang akan digunakan untuk menyimpan nama file
-    dir[dirNum] = parentIndex;
-    dir[dirNum+1] = secIdx;
-    i = dirNum + 2;
-    // 5. Isi Sektor pada Dir dengan nama file
-    // untuk sekarang asumsi jadi nama file dulu si path itu
-    j = 0;
-    while (i < dirNum+16 && j < strlen(path)) { 
-        dir[i] = path[j];
-        i++;
-        j++;
-    }
-    while (i < dirNum+16) {    // Padding yang kosong
-        dir[i] = 0x0;
-        i++;
-    }
+    // 4c. Buat File
+    writeDir(dir,dirNum,currParentIdx,secIdx,currFlName);
 
-    // 6. Cari Sektor di Map yang kosong (sudah ketemu)
-    // 7. Tulis Semua Buffer
+
+    // 5. Cari Sektor di Map yang kosong (sudah ketemu)
+    // 6. Tulis Semua Buffer
     // secNum = 32+secIdx*16    // 32 sector kernel, secIdx*16 karena setiap file ada 16 sector + i
     // Implementasi panjang buffer
     countSec = div(strlen(buffer)-1,512) + 1;
     for (i = 0; i < countSec; i++) {
         map[secNum+i] = 0xFF;
         for (j = 0; j < 512; j++) {
-            partBuff[j] = buffer[j+512*i];
+            buffSec[j] = buffer[j+512*i];
         } 
-        writeSector(partBuff,sec+secNum+i); 
+        writeSector(buffSec,sec+secNum+i); 
     }
     
 
@@ -328,7 +367,73 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
 
 
 
+// Fungsionalitas Tambahan
 
+bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx) {
+    // return index file yang ditemukan pada foundIdx
+    int i,j;
+    char buffName[15];
+    bool found = false;
+
+    i = 0;
+    while (i < 64 && !found) {
+        if (dir[16*i] == parrentIdx) {            // kalau ternyata ada yang parent indexnya sama
+            for (j = 0; j < 14; j++) {
+                buffName[j] = dir[16*i+(2+j)];    
+            }
+            buffName[14] = '\0';
+            if (strcmp(buffName,name)) {         // cek apakah namanya sama
+                if ((folder && dir[16*i+1] == 0xFF) || (!folder && dir[16*i+1] != 0xFF)) {  // cek jenisnya sama
+                    found = true;
+                }   
+            }
+        }
+        i++; 
+    }
+    *foundIdx = --i;
+    return found;
+}
+
+int foundEmptyDir(char* dir) {
+    bool found = false;
+    int dirIdx = 0;
+    int dirNum = 16*dirIdx;
+    while (dirIdx < 64 && !found) {     // ada 64 dir yang bisa diisi
+        if (dir[dirNum] == 0x00 && dir[dirNum+1] == 0x00 && dir[dirNum+2] == 0x00){    // Kemungkinan ada bug
+            found = true;
+        } else {
+            dirIdx++;
+            dirNum = 16*dirIdx;
+        }
+    }
+
+    if (found) {
+        return dirIdx;
+    } else {
+        return -1;
+    }
+    
+}
+
+
+void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name) {
+    int i,j;
+
+    dir[dirNum] = parrentIdx;
+    dir[dirNum+1] = sectorIdx;
+    i = dirNum + 2;
+    
+    j = 0;
+    while (i < dirNum+16 && j < strlen(name)) { 
+        dir[i] = name[j];
+        i++;
+        j++;
+    }
+    while (i < dirNum+16) {    // Padding yang kosong
+        dir[i] = 0x0;
+        i++;
+    }
+}
 
 
 // Bonus - ASCII ART
