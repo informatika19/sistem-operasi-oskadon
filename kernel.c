@@ -40,10 +40,10 @@ void readFile(char *buffer, char *path, int *result, char parentIndex);
 
 // Fungsi Penunjang
 void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
-int mod(int dividend, int divisor);         // long apa int?
-int div(int numerator, int denominator);    // long apa int?
+int mod(int dividend, int divisor);         
+int div(int numerator, int denominator);    
 int strlen(char* buff);
-
+int strcmp(char* a, char* b);
 // Fungsi Graphic dan Hiasan
 int modeScreen(int mode);
 void drawSquare();
@@ -74,9 +74,13 @@ int main() {
     
     while (1) {
         // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
-        handleInterrupt21 (1, buff, 0, 0);
-        handleInterrupt21 (0, buff, 0, 0);
-        handleInterrupt21 (0, "\n", 0, 0);
+        
+        readString(cmd);
+        //if(strcmp(cmd,"c")){
+        //    printString("calling cd\n");
+        //}
+        //launchProgram()
+        printString(cmd);
     };
 }
 
@@ -372,7 +376,7 @@ int mod(int dividend, int divisor){
     return dividend;
 }
 
-// Divison
+// Division
 int div(int numerator, int denominator){
     int res = 0;
     while (numerator >= denominator * res){
@@ -390,7 +394,25 @@ int strlen(char* buff) {
     return i;
     
 }
-
+int strcmp(char* a, char* b){
+    int lenA;
+    int i;
+    printString("calling strcmp");
+    printString(a);
+    printString(b);
+    lenA = strlen(a);
+    if(lenA != strlen(b)){
+        return 0;
+    }
+    i = 0;
+    while(i < lenA){
+        if(a[i] != b[i]){
+            return 0;
+        }
+        i++;
+    }
+    return 1;
+}
 
 // Menggambar image di mode13, error jangan digunakan
 // void drawSomething() {
