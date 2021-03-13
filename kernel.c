@@ -40,8 +40,8 @@ void readFile(char *buffer, char *path, int *result, char parentIndex);
 
 // Fungsi Penunjang
 void clear(char* buffer, int length);       //Fungsi untuk mengisi buffer dengan 0
-int mod(int dividend, int divisor);         // long apa int?
-int div(int numerator, int denominator);    // long apa int?
+int mod(int dividend, int divisor);         
+int div(int numerator, int denominator);    
 int strlen(char* buff);
 int strcmp(char* a, char* b);
 // Fungsi Graphic dan Hiasan
@@ -342,7 +342,7 @@ int mod(int dividend, int divisor){
     return dividend;
 }
 
-// Divison
+// Division
 int div(int numerator, int denominator){
     int res = 0;
     while (numerator >= denominator * res){
