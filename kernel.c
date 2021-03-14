@@ -61,11 +61,14 @@ void asciiART();
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
     int dump;
+    int b1[512];
+    int* sectors;
+
     
     // Tampilkan tampilan awal bios dengan graphic
     dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
     drawSomething();
-    interrupt(0x15,0x8600,0,100,0); // wait 1000 ms
+    interrupt(0x15,0x8600,0,10,0); // wait CK:100 = 1000 ms
 
     // Tampilkan tampilan awal bios dengan ASCII ART
     dump = modeScreen(0);    // Ganti mode menjadi text mode (Sekalian clear screen)
@@ -79,7 +82,10 @@ int main() {
     
     // Test writeFile
     // printString("t0\n");
-    // writeFile(b1,"sys/bin/cek15",sectors,0xFF);
+    b1[0] = 'a';
+    b1[1] = 'b';
+    b1[2] = 'c';
+    writeFile(b1,"cek3",sectors,0x01);
     // writeSector(b1,0x104);
     // readSector(b2,0x103+32+3*);
     // printString(b2);
@@ -208,8 +214,6 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     bool found = false;
     int dirIdx = 0;               // idx dir
     int dirNum = 16*dirIdx;       // alamat dir
-    int dirFree = 0;
-    int dirNeed = 0;
     int secIdx = 0;               // idx sector
     int secNum = 16*secIdx;       // idx map ke sector (alamat dir)
     int countSec = 0;
@@ -225,25 +229,9 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     readSector(map,0x100);
     readSector(dir,0x101);
     readSector(dir+512,0x102);
-    
-    // 2. Cek dir yang kosong
-    while (dirIdx < 64) {     // ada 64 dir yang bisa diisi
-        // printString("t1a\n");
-        if (dir[dirNum] == 0x00 && dir[dirNum+1] == 0x00 && dir[dirNum+2] == 0x00){    // Kemungkinan ada bug
-            dirFree++;
-		} 
-        dirIdx++;
-        dirNum = 16*dirIdx;
-        
-    }
-    
-    if (dirFree == 0) {
-        printString("Tidak cukup entri di files\n");
-        *sectors = -2;
-        return;
-    }
+     
     // printString("t2\n");
-    // 3. Cek parrent folder valid
+    // 2. Cek parrent folder valid
     found = false;
     if (parentIndex == 0xFF) { // folder di root
         found = true;
@@ -258,32 +246,31 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     }
     
 
-    // 4a. Atur bagian path
-    // Hitung ada berapa dir yang harus dibuat
-    i = 0;
-    while (path[i] != '\0') {
-        if (path[i] == '/') {  // Hitung ada berapa folder
-            dirNeed++;
-        }
-        i++;
-    }
-    dirNeed++;  // Tambah 1 file
-
-    // Cek apakah jumlah dir tidak cukup
-    if (dirNeed > dirFree) {
-        printString("Tidak cukup entri di files\n");
-        *sectors = -2;
-        return;
-    }
-
-    // 3b. Buat folder
+    // 3. Atur bagian path
+    // 3a. Buat folder
     i = 0;
     j = 0;
-    currParentIdx = parentIndex;
+    if (path[i] == '/') { // root dir 
+        currParentIdx = 0xFF;
+        i += 1;
+    } else if (path[i] == '.' && path[i+1] == '/') { // current dir (spesifik)
+        currParentIdx = parentIndex;
+        i += 2;
+    } else {    // current dir (default)
+        currParentIdx = parentIndex;
+    }
+
     while (path[i] != '\0') {
         currFlName[j] = path[i];
         if (currFlName[j] == '/') {
             currFlName[j] = '\0';
+            // Cek apakah nama folder valid (tidak boleh kosong)
+            if (strcmp(currFlName,"")) {
+                printString("Nama folder tidak valid");
+                *sectors = -5;
+                return;
+            }
+             
             // Cek apakah sudah tersedia folder yang sama
             found = isFlExist(dir,currParentIdx,currFlName,true,foundIdx);
             if (found) {
@@ -293,6 +280,12 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
             } else {
                 // cari dir yang kosong
                 dirIdx = foundEmptyDir(dir);
+                if (dirIdx == -1) {
+                    printString("Tidak cukup entri di files\n");
+                    *sectors = -2;
+                    return;
+                }
+
                 dirNum = dirIdx*16;
                 // buat folder baru
                 writeDir(dir,dirNum,currParentIdx,0xFF,currFlName);
@@ -306,8 +299,14 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
         i++;
     }
 
-    // 4. Buat File
-    // 4a. Cek apakah sudah file udah ada
+    // Cek apakah nama file valid (tidak boleh kosong)
+    if (strcmp(currFlName,"")) {
+        printString("Nama file tidak valid");
+        *sectors = -5;
+        return;
+    }
+
+    // 3b. Cek apakah sudah file udah ada
     found = isFlExist(dir,currParentIdx,currFlName,false,foundIdx);
     if (found) {
         printString("File sudah ada\n");
@@ -316,10 +315,15 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     }
     // cari dir yang kosong
     dirIdx = foundEmptyDir(dir);
+    if (dirIdx == -1) {
+        printString("Tidak cukup entri di files\n");
+        *sectors = -2;
+        return;
+    }
     dirNum = dirIdx*16;
 
 
-    // 4b. Cek jumlah sektor di map cukup untuk buffer file
+    // 4. Cek jumlah sektor di map cukup untuk buffer file
     // 1 File mengisi 16 sector (asumsi jadiin chunk gini)
     // Terdapat 32 secIdx yang bisa diisi (chunk), dengan 1 chunk berisi 16 sektor
     // 1 sector memuat 512 byte
@@ -338,12 +342,12 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
         return;
     }
 
-    // 4c. Buat File
+    // 5. Buat File
     writeDir(dir,dirNum,currParentIdx,secIdx,currFlName);
 
 
-    // 5. Cari Sektor di Map yang kosong (sudah ketemu)
-    // 6. Tulis Semua Buffer
+    // 6. Cari Sektor di Map yang kosong (sudah ketemu)
+    // 7. Tulis Semua Buffer
     // secNum = 32+secIdx*16    // 32 sector kernel, secIdx*16 karena setiap file ada 16 sector + i
     // Implementasi panjang buffer
     countSec = div(strlen(buffer)-1,512) + 1;
@@ -363,6 +367,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     *sectors = secIdx;
     return;
 }
+
 
 void readFile(char *buffer, char *path, int *result, char parentIndex) {
     char files[1024], sectors[512];
@@ -427,6 +432,7 @@ bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx
 }
 
 int foundEmptyDir(char* dir) {
+    // return dirIdx jika ketemu yang kosong, return -1 jika tidak ditemukan
     bool found = false;
     int dirIdx = 0;
     int dirNum = 16*dirIdx;
