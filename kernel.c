@@ -1,4 +1,3 @@
-
 // KAMUS
 #define INT_10H 0x10
 #define INT_13H 0x13
@@ -42,6 +41,8 @@ void readFile(char *buffer, char *path, int *result, char parentIndex);
 bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx);
 int foundEmptyDir(char* dir);
 void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name);
+int isFirstLetter(char* first, char* compare, int length);
+int findFileIndex(char parentIndex, char* path);
 
 
 // Fungsi Penunjang 2
@@ -363,7 +364,40 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     return;
 }
 
+void readFile(char *buffer, char *path, int *result, char parentIndex) {
+	char sectors[512], files[1024];
+	int sectNum, sectPos, sectIdx, fileIdx;
 
+    // cari file
+	fileIdx = findFileIndex(parentIndex, path);
+
+    // file tidak ditemukan
+	if (fileIdx == -1) {   
+        printString("File tidak ditemukan");
+		*result = -1;
+		return;
+	}
+
+    // Baca files dan sectors
+	readSector(files, 0x101);
+	readSector(files + 512, 0x102);
+	readSector(sectors, 0x103);
+
+	// Read sector
+	sectIdx = files[fileIdx * 16 + 1];
+
+    // Read file
+    // Ada 16 sektor
+	for (sectNum = 0; sectNum < 16; sectNum++) {
+		sectPos = sectIdx * 16 + sectNum;
+		if (sectors[sectPos] == 0) {    // EOF
+			break;
+		}
+		readSector(buffer + (sectNum * 512), sectors[sectPos]);
+	}
+	
+	*result = 1;
+}
 
 // Fungsionalitas Tambahan
 
@@ -431,6 +465,85 @@ void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name) 
         dir[i] = 0x0;
         i++;
     }
+}
+
+int isFirstLetter(char *first, char *compare, int length) {
+    // ngecek apakah char first adalah huruf pertama di string
+    int i;
+
+    for (i = 0; i < length; i++) {
+        if (first[i] != compare[i]) {
+            return 0;
+        }
+        if (compare[i] == 0) {
+            return 1;
+        }
+    }
+
+    return 1;
+}
+
+int findFileIndex(char parentIndex, char* path) {
+	char files[1024], parent;
+	int fileIdx, pathIdx, isFound;
+
+    parent = parentIndex;
+	fileIdx = 0;
+	pathIdx = 0;
+	isFound = 0;
+
+	readSector(files, 0x101);
+	readSector(files + 512, 0x102);
+
+	if (path[0] == '/') {	// root
+		pathIdx += 1;
+		parent = 0xFF;
+	} 
+    else if (path[0] == '.' && path[1] == '/') {	// current dir
+		pathIdx += 2;
+	}
+
+	while (path[pathIdx] != 0) {
+		if (path[pathIdx] == '/') {		// enter dir
+			if (isFound == 0) {
+				return -1;
+			}
+			isFound = 0;
+			pathIdx += 1;
+		} 
+        else if (path[pathIdx] == '.' && path[pathIdx + 1] == '.' && path[pathIdx + 2] == '/') {    // naik satu dir
+			if (parent == 0xFF) {
+                return -1;
+            }
+			parent = files[parent * 16];
+			pathIdx += 3;
+		} 
+        else {  // traverse semua file di dir
+			if (parent != files[fileIdx * 16]) {    // file gak di parent
+				fileIdx++;
+			} 
+            else if (files[fileIdx * 16 + 2] == 0) {    // nama kosong
+				fileIdx++;
+			}
+            // file found
+            // kalo huruf pertama path sama file sama, pathIdx diupdate
+            else if (isFirstLetter(path + pathIdx, files + fileIdx * 16 + 2, 14)) {
+				pathIdx += strlen(files + fileIdx * 16 + 2);
+				isFound = 1;
+				parent = fileIdx;
+				fileIdx = 0;
+			} 
+            else {
+				fileIdx++;
+			}
+        
+			if (fileIdx >= 64) {   // max 64 files
+				return -1;
+			}
+		}
+	}
+
+    return parent;
 }
 
 
