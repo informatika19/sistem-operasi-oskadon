@@ -56,8 +56,8 @@ int modeScreen(int mode);
 void drawSquare();
 void drawSomething();
 void asciiART();
-//buat debugging
-
+//buat testing shell
+/*
 void shell();
 void executecmd(char* cmd);
 int modifiedstrcmp(char* a, char* b, int len,int start);
@@ -66,7 +66,7 @@ void cd(char* param);
 void ls(char* param);
 void cat(char* param);
 void ln(char* param);
-
+*/
 
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
