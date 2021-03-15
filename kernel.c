@@ -39,6 +39,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex);
 
 // Fungsi Penunjang 1
 bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx);
+void getFlName(char* files,char filesIdx, char* name);
 int foundEmptyDir(char* dir);
 void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name);
 bool isFirstLetter(char* first, char* compare);
@@ -463,26 +464,24 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
 // Fungsionalitas Tambahan
 bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx) {
     // return index file yang ditemukan pada foundIdx
-    int i,j;
+    int filesIdx,j;
     char buffName[15];
     bool found = false;
 
-    i = 0;
-    while (i < 64 && !found) {
-        if (dir[16*i] == parrentIdx) {            // kalau ternyata ada yang parent indexnya sama
-            for (j = 0; j < 14; j++) {
-                buffName[j] = dir[16*i+(2+j)];    
-            }
-            buffName[14] = '\0';
+    filesIdx = 0;
+    while (filesIdx < 64 && !found) {
+        if (dir[16*filesIdx] == parrentIdx) {            // kalau ternyata ada yang parent indexnya sama
+            getFlName(dir,filesIdx,buffName);
             if (strcmp(buffName,name)) {         // cek apakah namanya sama
-                if ((folder && dir[16*i+1] == 0xFF) || (!folder && dir[16*i+1] != 0xFF)) {  // cek jenisnya sama
+                
+                if ((folder && dir[16*filesIdx+1] == 0xFF) || (!folder && dir[16*filesIdx+1] != 0xFF)) {  // cek jenisnya sama
                     found = true;
                 }   
             }
         }
-        i++; 
+        filesIdx++; 
     }
-    *foundIdx = --i;
+    *foundIdx = --filesIdx;
     return found;
 }
 
@@ -506,6 +505,15 @@ int foundEmptyDir(char* dir) {
         return -1;
     }
     
+}
+
+void getFlName(char* files,char filesIdx, char* name) {
+    int i;
+
+    for (i = 0; i < 14; i++) {
+        name[i] = files[16*filesIdx+(2+i)];    
+    }
+    name[14] = '\0';
 }
 
 
