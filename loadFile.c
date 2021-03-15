@@ -6,6 +6,28 @@
 
 #include <stdio.h>
 
+int findFreeEntry(char* entries) {
+    int i;
+    for (i = 0; i < 64; i++) {
+        if (entries[i * 16 + 1] == '\0') {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+int findFreeSector(char* map) {
+    int i;
+    for (i = 0; i < 0x100; i++) {
+        if (map[i] == 0x00) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 void main(int argc, char* argv[]) {
     int i;
 
@@ -39,11 +61,10 @@ void main(int argc, char* argv[]) {
     }
 
     // load files
-    // files di 0x101 & 0x102
-    // size array 512 x 2 = 1024
-    char file[1024];
-    fseek(system, 512 * 0x101, SEEK_SET);
-    for (i = 0; i < 1024; i++) {
+    // files di 0x102
+    char file[512];
+    fseek(system, 512 * 0x102, SEEK_SET);
+    for (i = 0; i < 512; i++) {
         file[i] = fgetc(system);
     }
 
@@ -56,99 +77,63 @@ void main(int argc, char* argv[]) {
     }
 
     // find a free entry in files
-    // tiap chunk ada 16 bytes
-    for (i = 0; i < 1024; i = i + 16)
-        if (file[i + 2] == 0) {
-            break;
-        }
-    if (i == 1024) {
-        printf("Not enough room in files\n");
-        return;
-    }
-    int fileindex = i;
-
-    // fill the name field with 00s first
-    for (i = 0; i < 14; i++) {
-        file[fileindex + i + 2] = 0x00;
-    }
-    // copy the name over
-    for (i = 0; i < 14; i++) {
-        if (argv[1][i] == 0) {
-            break;
-        }
-        file[fileindex + i + 2] = argv[1][i];
-    }
-
-    // find a free entry in sectors
-    for (i = 0; i < 32; i = i + 1)
-        if (sector[i<<4] == 0) break;
-    if (i == 32) {
-        printf("Not enough room in sectors\n");
-        return;
-    }
-
-    int sectorindex = i * 16;
-    file[fileindex + 1] = i;
-    file[fileindex] = 0xFF;
-
-    // find free sectors and add them to the file
-    int sectorcount = 0;
-    while (!feof(loadedfile)) {
-        if (sectorcount == 20) {
-            printf("Not enough space in directory entry for file\n");
-            return;
-        }
-
-        // find a free map entry
-        for (i = 0; i < 256; i++) {
-            if (map[i] == 0) {
-                break;
+    int entry = findFreeEntry(file);
+    if (entry != -1) {
+        int sectorCount = 0;
+        while (!feof(loadedfile)) {
+            int freeSector = findFreeSector(map);
+            if (sector != -1) {
+                fseek(loadedfile, sectorCount * 512, SEEK_SET);
+                fseek(system, freeSector * 512, SEEK_SET);
+                for (i = 0; i < 512; i++) {
+                    if (!feof(loadedfile)) {
+                        fputc(fgetc(loadedfile), system);
+                    }
+                    else {
+                        fputc(0x00, system);
+                    }
+                }
+                printf("%s diload ke sector %d\n", argv[1], freeSector);
+                map[freeSector] = 0xFF;
+                sector[entry * 16 + sectorCount] = freeSector;
+                sectorCount += 1;
             }
-            if (i == 256) {
-                printf("Not enough room for file\n");
+            else {
+                printf("Sector penuh\n");
                 return;
             }
         }
 
-        // mark the map entry as taken
-        map[i] = 0xFF;
+        file[entry * 16] = 0xFF;
 
-        // mark the sector in the directory entry
-        sector[sectorindex] = i;
-        sectorindex++;
-        sectorcount++;
+        // tulis nama file
+        for (i = 0; argv[1][i] != '\0'; i++) {
+            file[entry * 16 + 1 + i] = argv[1][i];
+        }
+        for (; i < 15; i++) {
+            file[entry * 16 + 1 + i] = '\0';
+        }
 
-        // move to the sector and write to it
-        fseek(system, i * 512, SEEK_SET);
+        // write map
+        fseek(system, 512 * 0x100, SEEK_SET);
         for (i = 0; i < 512; i++) {
-            if (feof(loadedfile)) {
-                fputc(0x0, system);
-                break;
-            } 
-            else {
-                char c = fgetc(loadedfile);
-                fputc(c, system);
-            }
+            fputc(map[i], system);
+        }
+
+        // write files
+        fseek(system, 512 * 0x102, SEEK_SET);
+        for (i = 0; i < 512; i++) {
+            fputc(file[i], system);
+        }
+
+        // write sectors
+        fseek(system, 512 * 0x103, SEEK_SET);
+        for (i = 0; i < 512; i++) {
+            fputc(sector[i], system);
         }
     }
-
-    // write the map, files, and sectors back to the system image
-    // map
-    fseek(system, 512 * 0x100, SEEK_SET);
-    for (i = 0; i < 512; i++) {
-        fputc(map[i], system);
-    }
-
-    // files
-    fseek(system, 512 * 0x101, SEEK_SET);
-    for (i = 0; i < 1024; i++) {
-        fputc(file[i], system);
-    }
-
-    // sectors
-    fseek(system, 512 * 0x103, SEEK_SET);
-    for (i = 0; i < 512; i++) {
-        fputc(sector[i], system);
+    else {
+        printf("Maximum number of files reached");
     }
 
     fclose(system);
