@@ -188,6 +188,7 @@ void cd(char* param,int* currDirIdx) {
 
 
 }
+
 void ls(int* currDirIdx) {
     char dir[512];
     char file[512];

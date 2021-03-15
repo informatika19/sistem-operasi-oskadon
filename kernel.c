@@ -543,7 +543,7 @@ void writeDir(char* files, int filesNum, int parrentIdx, int sectorIdx, char* na
     i = filesNum + 2;
     
     j = 0;
-    while (i < filesNum+16 && j < strlen(name)) { 
+    while (i < filesNum+15 && j < strlen(name)) { 
         files[i] = name[j];
         i++;
         j++;
