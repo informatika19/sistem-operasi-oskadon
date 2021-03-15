@@ -68,7 +68,7 @@ int main() {
     // Tampilkan tampilan awal bios dengan graphic
     dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
     drawSomething();
-    interrupt(0x15,0x8600,0,10,0); // wait CK:100 = 1000 ms
+    interrupt(0x15,0x8600,0,100,0); // wait CK:100 = 1000 ms
 
     // Tampilkan tampilan awal bios dengan ASCII ART
     dump = modeScreen(0);    // Ganti mode menjadi text mode (Sekalian clear screen)
