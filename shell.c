@@ -188,7 +188,7 @@ void cd(char* param,int* currDirIdx) {
 
 
 }
-void ls(char* param,int* currDirIdx); {
+void ls(char* param,int* currDirIdx) {
     printString("calling ls with parar : ");
     printString("\n");
 }
