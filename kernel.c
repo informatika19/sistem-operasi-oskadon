@@ -61,14 +61,15 @@ void asciiART();
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
     int dump;
-    int b1[512];
+    char b1[512];
+    char b2[512];
     int* sectors;
 
     
     // Tampilkan tampilan awal bios dengan graphic
     dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
     drawSomething();
-    interrupt(0x15,0x8600,0,100,0); // wait CK:100 = 1000 ms
+    interrupt(0x15,0x8600,0,10,0); // wait CK:100 = 1000 ms
 
     // Tampilkan tampilan awal bios dengan ASCII ART
     dump = modeScreen(0);    // Ganti mode menjadi text mode (Sekalian clear screen)
@@ -85,9 +86,10 @@ int main() {
     b1[0] = 'a';
     b1[1] = 'b';
     b1[2] = 'c';
-    writeFile(b1,"cek3",sectors,0x01);
-    // writeSector(b1,0x104);
-    // readSector(b2,0x103+32+3*);
+    b1[3] = 'd';
+    // writeFile(b1,"/sys/cek3",sectors,0xFF);
+    // readFile(b2,"/sys/cek3",sectors,0xFF);
+
     // printString(b2);
 
 
@@ -370,23 +372,77 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
 
 
 void readFile(char *buffer, char *path, int *result, char parentIndex) {
-    char files[1024], sectors[512];
+    char files[1024], maps[512];
     int sectNum, sectPos, sectIdx, fileIdx;
+    char currParentIdx;
+    char currFlName[128];
+    bool found;
+    int* foundIdx;
+    int i,j;
 
-    // cari file
-    fileIdx = findFileIndex(parentIndex, path);
+    // 0. inisialisasi
+    readSector(maps, 0x100);
+    readSector(files, 0x101);
+    readSector(files + 512, 0x102);
 
-    // ndak ketemu
-    if (fileIdx == -1) {
-        printString("File tidak ditemukan\n");
-        *result = -1;
+    // 1. cari folder dan file
+    i = 0;
+    j = 0;
+    if (path[i] == '/') { // root dir 
+        currParentIdx = 0xFF;
+        i += 1;
+    } else if (path[i] == '.' && path[i+1] == '/') { // current dir (spesifik)
+        currParentIdx = parentIndex;
+        i += 2;
+    } else {    // current dir (default)
+        currParentIdx = parentIndex;
+    }
+
+    // 2. Cari path sampe ketemu bagian file
+    while (path[i] != '\0') {
+        currFlName[j] = path[i];
+        if (currFlName[j] == '/') {
+            currFlName[j] = '\0';
+            // Cek apakah nama folder valid (tidak boleh kosong)
+            if (strcmp(currFlName,"")) {
+                printString("Nama folder tidak valid");
+                *result = -5;
+                return;
+            }
+             
+            // Cek apakah sudah tersedia folder yang sama
+            found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+            if (found) {
+                printString("Folder sudah ada\n");
+                currParentIdx = *foundIdx;
+                // printString(currParentIdx);
+            } else {
+                printString("Folder tidak ditemukan\n");
+                *result = -1;
+                return;
+            }
+            j = 0;
+        } else {
+            j++;
+        }
+        i++;
+    }
+    // Cek apakah nama file valid (tidak boleh kosong)
+    if (strcmp(currFlName,"")) {
+        printString("Nama file tidak valid");
+        *result = -5;
         return;
     }
 
-    // Baca files dan sectors
-    readSector(files, 0x101);
-    readSector(files + 512, 0x102);
-    readSector(sectors, 0x103);
+    // 3. Cek file ada
+    found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
+    if (!found) {
+        printString("File tidak ditemukan\n");
+        return;
+    }
+
+    printString("File ditemukan\n");
+    fileIdx = *foundIdx;
 
     // Read sector index
     sectIdx = files[fileIdx * 16 + 1];
@@ -395,17 +451,17 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
     // Ada 16 sektor
     for (sectNum = 0; sectNum < 16; sectNum++) {
         sectPos = sectIdx * 16 + sectNum;
-        if (sectors[sectPos] == 0) { // EOF
+        
+        if (maps[sectPos] == 0) { // EOF
             break;
         }
-        readSector(buffer + (sectNum * 512), sectors[sectPos]);
+        readSector(buffer, 0x103 + sectPos);
     }
 
     *result = 1;
 }
 
 // Fungsionalitas Tambahan
-
 bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx) {
     // return index file yang ditemukan pada foundIdx
     int i,j;
@@ -473,83 +529,6 @@ void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name) 
     }
 }
 
-bool isFirstLetter(char* first, char* compare) {
-    // ngecek apakah char first adalah huruf pertama string
-    int i;
-
-    for (i = 0; i < 14; i++) {
-        if (first[i] != compare[i]) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-int findFileIndex(char parentIndex, char* path) {
-    // cari file ada di index keberapa di dir
-    char files[1024], parent;
-    int fileIdx, pathIdx;
-    bool isFound;
-
-    parent = parentIndex;
-    fileIdx = 0;
-    pathIdx = 0;
-    isFound = false;
-
-    readSector(files, 0x101);
-    readSector(files + 512, 0x102);
-
-    if (path[0] == "/") { // root
-        pathIdx += 1;
-        parent = 0xFF;
-    }
-    else if (path[0] == "." && path[1] == "/") { // current dir
-        pathIdx += 2;
-    }
-
-    while (path[pathIdx] != 0) {
-        if (path[pathIdx] == "/") { // enter dir
-            if (!isFound) {
-                return -1;
-            }
-            isFound = false;
-            pathIdx += 1;
-        }
-        else if (path[pathIdx] == "." && path[pathIdx + 1] == "." && path[pathIdx + 2] == "/") {
-            if (parent == 0xFF) {
-                return -1;
-            }
-            parent = files[parent * 16];
-            pathIdx += 3;
-        }
-        else { // traverse semua file di dir
-            if (parent != files[fileIdx * 16]) { // file gak di parent
-                fileIdx += 1;
-            }
-            else if (files[fileIdx * 16 + 2] == 0) { // nama kosong
-                fileIdx += 1;
-            }
-            // file found
-            // kalo huruf pertama path sama file sama, pathIdx diupdate
-            else if (isFirstLetter(path + pathIdx, files + fileIdx * 16 + 2)) {
-                pathIdx += strlen(files + fileIdx * 16 + 2);
-                parent = fileIdx;
-                fileIdx = 0;
-                isFound = true;
-            }
-            else {
-                fileIdx += 1;
-            }
-
-            if (fileIdx >= 64) { // max 64 files
-                return -1;
-            }
-        }
-    }
-
-    return parent;
-}
 
 
 // Bonus - ASCII ART
@@ -694,4 +673,87 @@ void drawSomething() {
         y++;
     }
     // // return;
+}
+
+
+
+
+// Unused
+int findFileIndex(char* dir, char *path, int *result, char parentIndex) {
+    // cari file ada di index keberapa di dir
+    char files[1024], parent;
+    int fileIdx, pathIdx;
+    bool isFound;
+
+    parent = parentIndex;
+    fileIdx = 0;
+    pathIdx = 0;
+    isFound = false;
+
+    readSector(files, 0x101);
+    readSector(files + 512, 0x102);
+
+    if (path[0] == "/") { // root
+        pathIdx += 1;
+        parent = 0xFF;
+    }
+    else if (path[0] == "." && path[1] == "/") { // current dir
+        pathIdx += 2;
+    }
+
+    while (path[pathIdx] != 0) {
+        if (path[pathIdx] == "/") { // enter dir
+            if (!isFound) {
+                return -1;
+            }
+            isFound = false;
+            pathIdx += 1;
+        }
+        else if (path[pathIdx] == "." && path[pathIdx + 1] == "." && path[pathIdx + 2] == "/") {
+            if (parent == 0xFF) {
+                return -1;
+            }
+            parent = files[parent * 16];
+            pathIdx += 3;
+        }
+        else { // traverse semua file di dir
+            if (parent != files[fileIdx * 16]) { // file gak di parent
+                fileIdx += 1;
+            }
+            else if (files[fileIdx * 16 + 2] == 0) { // nama kosong
+                fileIdx += 1;
+            }
+            // file found
+            // kalo huruf pertama path sama file sama, pathIdx diupdate
+            else if (isFirstLetter(path + pathIdx, files + fileIdx * 16 + 2)) {
+                pathIdx += strlen(files + fileIdx * 16 + 2);
+                parent = fileIdx;
+                fileIdx = 0;
+                isFound = true;
+            }
+            else {
+                fileIdx += 1;
+            }
+
+            if (fileIdx >= 64) { // max 64 files
+                return -1;
+            }
+        }
+    }
+
+    return parent;
+}
+
+
+bool isFirstLetter(char* first, char* compare) {
+    // ngecek apakah char first adalah huruf pertama string
+    int i;
+
+    for (i = 0; i < 14; i++) {
+        if (first[i] != compare[i]) {
+            return false;
+        }
+    }
+
+    return true;
 }
