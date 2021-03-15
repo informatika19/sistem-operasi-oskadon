@@ -210,13 +210,13 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     // KAMUS
     
     char map[512];
-    char dir[1024];
+    char files[1024];
     int sec = 0x103;
     bool found = false;
-    int dirIdx = 0;               // idx dir
-    int dirNum = 16*dirIdx;       // alamat dir
+    int filesIdx = 0;               // idx files
+    int filesNum = 16*filesIdx;       // alamat files
     int secIdx = 0;               // idx sector
-    int secNum = 16*secIdx;       // idx map ke sector (alamat dir)
+    int secNum = 16*secIdx;       // idx map ke sector (alamat files)
     int countSec = 0;
     int i, j, k, l;
     char buffSec[512];
@@ -228,15 +228,15 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     // printString("t1\n");
     // 1. Baca Sektor Map dan Dir
     readSector(map,0x100);
-    readSector(dir,0x101);
-    readSector(dir+512,0x102);
+    readSector(files,0x101);
+    readSector(files+512,0x102);
      
     // printString("t2\n");
     // 2. Cek parrent folder valid
     found = false;
     if (parentIndex == 0xFF) { // folder di root
         found = true;
-    } else if (dir[16*parentIndex+1] == 0xFF) { // sebuah folder
+    } else if (files[16*parentIndex+1] == 0xFF) { // sebuah folder
         found = true;
     }
 
@@ -251,13 +251,13 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     // 3a. Buat folder
     i = 0;
     j = 0;
-    if (path[i] == '/') { // root dir 
+    if (path[i] == '/') { // root files 
         currParentIdx = 0xFF;
         i += 1;
-    } else if (path[i] == '.' && path[i+1] == '/') { // current dir (spesifik)
+    } else if (path[i] == '.' && path[i+1] == '/') { // current files (spesifik)
         currParentIdx = parentIndex;
         i += 2;
-    } else {    // current dir (default)
+    } else {    // current files (default)
         currParentIdx = parentIndex;
     }
 
@@ -273,25 +273,25 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
             }
              
             // Cek apakah sudah tersedia folder yang sama
-            found = isFlExist(dir,currParentIdx,currFlName,true,foundIdx);
+            found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
             if (found) {
                 printString("Folder sudah ada\n");
                 currParentIdx = *foundIdx;
                 // printString(currParentIdx);
             } else {
-                // cari dir yang kosong
-                dirIdx = foundEmptyDir(dir);
-                if (dirIdx == -1) {
+                // cari files yang kosong
+                filesIdx = foundEmptyDir(files);
+                if (filesIdx == -1) {
                     printString("Tidak cukup entri di files\n");
                     *sectors = -2;
                     return;
                 }
 
-                dirNum = dirIdx*16;
+                filesNum = filesIdx*16;
                 // buat folder baru
-                writeDir(dir,dirNum,currParentIdx,0xFF,currFlName);
+                writeDir(files,filesNum,currParentIdx,0xFF,currFlName);
 
-                currParentIdx = dirIdx;
+                currParentIdx = filesIdx;
             }
             j = 0;
         } else {
@@ -308,20 +308,20 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     }
 
     // 3b. Cek apakah sudah file udah ada
-    found = isFlExist(dir,currParentIdx,currFlName,false,foundIdx);
+    found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
     if (found) {
         printString("File sudah ada\n");
         *sectors = -1;
         return;
     }
-    // cari dir yang kosong
-    dirIdx = foundEmptyDir(dir);
-    if (dirIdx == -1) {
+    // cari files yang kosong
+    filesIdx = foundEmptyDir(files);
+    if (filesIdx == -1) {
         printString("Tidak cukup entri di files\n");
         *sectors = -2;
         return;
     }
-    dirNum = dirIdx*16;
+    filesNum = filesIdx*16;
 
 
     // 4. Cek jumlah sektor di map cukup untuk buffer file
@@ -344,7 +344,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     }
 
     // 5. Buat File
-    writeDir(dir,dirNum,currParentIdx,secIdx,currFlName);
+    writeDir(files,filesNum,currParentIdx,secIdx,currFlName);
 
 
     // 6. Cari Sektor di Map yang kosong (sudah ketemu)
@@ -362,8 +362,8 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     
 
     writeSector(map,0x100);
-	writeSector(dir,0x101);
-    writeSector(dir+512,0x102);
+	writeSector(files,0x101);
+    writeSector(files+512,0x102);
     printString("Write File Success!\n");
     *sectors = secIdx;
     return;
@@ -509,21 +509,21 @@ int foundEmptyDir(char* dir) {
 }
 
 
-void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name) {
+void writeDir(char* files, int filesNum, int parrentIdx, int sectorIdx, char* name) {
     int i,j;
 
-    dir[dirNum] = parrentIdx;
-    dir[dirNum+1] = sectorIdx;
-    i = dirNum + 2;
+    files[filesNum] = parrentIdx;
+    files[filesNum+1] = sectorIdx;
+    i = filesNum + 2;
     
     j = 0;
-    while (i < dirNum+16 && j < strlen(name)) { 
-        dir[i] = name[j];
+    while (i < filesNum+16 && j < strlen(name)) { 
+        files[i] = name[j];
         i++;
         j++;
     }
-    while (i < dirNum+16) {    // Padding yang kosong
-        dir[i] = 0x0;
+    while (i < filesNum+16) {    // Padding yang kosong
+        files[i] = 0x0;
         i++;
     }
 }

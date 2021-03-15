@@ -76,13 +76,13 @@ int ignoreSpace(char* cmd, int start){ //return new index
     return start;
 }
 
-void cd(char* param,char* currDir) {
+void cd(char* param,char* currDirIdx) {
     // KAMUS
     char files[1024];
     char currFlName[128];
+    char* foundIdx;
     bool found;
-
-
+    int i,j;
 
     printString("calling cd with parar : ");
     printString(param);
@@ -91,33 +91,53 @@ void cd(char* param,char* currDir) {
     readSector(files, 0x101);
     readSector(files+512, 0x102);
 
+    
+    i = 0;
+    j = 0;
+    while (param[i] != '\0') 
+    {
+        currFlName[j] = param[i];
+        if (currFlName[j] == '/' || currFlName[j] == '\0') {
+            currFlName[j] = '\0';
+            // Cek apakah nama folder valid (tidak boleh kosong)
+            if (strcmp(currFlName,".")) 
+            {
+                // Do Nothing, di curr dir yang sama
+            } 
+            else if (strcmp(currFlName,"..")) 
+            {   // Back to parent
+                if (*currDirIdx != 0xFF) {    // Bukan di root
+                    // Cari parent folder ini
+                    *currDirIdx = files[(*currDirIdx)*16];
+                }
+                // kalau di root do nothing aja
+            } 
+            else if (strcmp(currFlName,"")) 
+            {
+                printString("Error: Nama folder tidak valid");
+                return;
+            } 
+            else    // default, sebuah nama folder
+            {        
+                found = isFlExist(files,currDirIdx,currFlName,true,foundIdx);
+                if (!found) { // folder tidak ada
+                    printString("Error: Folder tidak ditemukan\n");
+                    return;
+                }
+                // ditemukan
+                *currDirIdx = *foundIdx;
+            }
+            j = 0;
+        } else {
+            j++;
+        }
 
-    // while (param[i] != '\0') {
-    //     currFlName[j] = param[i];
-    //     if (currFlName[j] == '/') {
-    //         currFlName[j] = '\0';
-    //         // Cek apakah nama folder valid (tidak boleh kosong)
-    //         if (strcmp(currFlName,"")) {
-    //             printString("Nama folder tidak valid");
-    //             return;
-    //         }
-             
-    //         // Cek apakah sudah tersedia folder yang sama
-    //         found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-    //         if (found) {
-    //             printString("Folder sudah ada\n");
-    //             currParentIdx = *foundIdx;
-    //             // printString(currParentIdx);
-    //         } else {
-    //             printString("Folder tidak ditemukan\n");
-    //             return;
-    //         }
-    //         j = 0;
-    //     } else {
-    //         j++;
-    //     }
-    //     i++;
-    // }
+        if (param[i] != '\0') {
+            i++;
+        }
+    } 
+
+
     // // Cek apakah nama file valid (tidak boleh kosong)
     // if (strcmp(currFlName,"")) {
     //     printString("Nama file tidak valid");
@@ -126,7 +146,7 @@ void cd(char* param,char* currDir) {
     // }
 
     // // 3. Cek file ada
-    // found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
+    // found = isFlExist(files,*currDir,currFlName,false,foundIdx);
     // if (!found) {
     //     printString("File tidak ditemukan\n");
     //     return;
