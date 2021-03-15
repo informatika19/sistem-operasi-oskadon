@@ -8,7 +8,7 @@ int modifiedstrcmp(char* a, char* b, int len,int start);
 int ignoreSpace(char* cmd, int start);
 void printCurrDirName(int currDirIdx);
 void cd(char* param,int* currDirIdx);
-void ls(char* param,int* currDirIdx);
+void ls(int* currDirIdx);
 void cat(char* param,int* currDirIdx);
 void ln(char* param,int* currDirIdx);
 
@@ -48,7 +48,7 @@ void executecmd(char* cmd, int* currDirIdx){
     }else if(modifiedstrcmp(cmd,"ls",2,cmdIndex)){
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
-        ls(&cmd[cmdIndex],currDirIdx);
+        ls(currDirIdx);
     }else if(modifiedstrcmp(cmd,"cat",3,cmdIndex)){
         cmdIndex += 3;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
@@ -188,10 +188,44 @@ void cd(char* param,int* currDirIdx) {
 
 
 }
-void ls(char* param,int* currDirIdx) {
-    printString("calling ls with parar : ");
-    printString("\n");
+void ls(int* currDirIdx) {
+    char dir[512];
+    char file[512];
+    char args[512];
+    int i;
+    int parentIdx;
+
+    parentIdx = *currDirIdx;
+
+    // read dir & file
+    readSector(dir, 0x101);
+    readSector(file, 0x102);
+
+    // get current working directory
+    readSector(args, 0x200);
+    parentIdx = args[0];
+
+    // print dir
+    i = 0;
+    while (i < 32) {
+        if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
+            printString(dir[i * 16 + 1]);
+            printString('\n\r');
+        }
+        i += 1;
+    }
+
+    // print file
+    i = 0;
+    while (i < 32) {
+        if (file[i * 16] == parentIdx && file[i * 16 + 1] != '\0') {
+            printString(file[i * 16 + 1]);
+            printString('\n\r');
+        }
+        i += 1;
+    }
 }
+
 void cat(char* param, int* currDirIdx)  {
     char buffer[1024];
     int result;
