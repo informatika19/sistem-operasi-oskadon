@@ -1,3 +1,6 @@
+#define bool unsigned char
+#define true 1
+#define false 0
 
 void shell();
 void executecmd(char* cmd,char* currDir);
@@ -73,10 +76,63 @@ int ignoreSpace(char* cmd, int start){ //return new index
     return start;
 }
 
-void cd(char* param,char* currDir){
+void cd(char* param,char* currDir) {
+    // KAMUS
+    char files[1024];
+    char currFlName[128];
+    bool found;
+
+
+
     printString("calling cd with parar : ");
     printString(param);
     printString("\n");
+
+    readSector(files, 0x101);
+    readSector(files+512, 0x102);
+
+
+    // while (param[i] != '\0') {
+    //     currFlName[j] = param[i];
+    //     if (currFlName[j] == '/') {
+    //         currFlName[j] = '\0';
+    //         // Cek apakah nama folder valid (tidak boleh kosong)
+    //         if (strcmp(currFlName,"")) {
+    //             printString("Nama folder tidak valid");
+    //             return;
+    //         }
+             
+    //         // Cek apakah sudah tersedia folder yang sama
+    //         found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+    //         if (found) {
+    //             printString("Folder sudah ada\n");
+    //             currParentIdx = *foundIdx;
+    //             // printString(currParentIdx);
+    //         } else {
+    //             printString("Folder tidak ditemukan\n");
+    //             return;
+    //         }
+    //         j = 0;
+    //     } else {
+    //         j++;
+    //     }
+    //     i++;
+    // }
+    // // Cek apakah nama file valid (tidak boleh kosong)
+    // if (strcmp(currFlName,"")) {
+    //     printString("Nama file tidak valid");
+    //     *result = -5;
+    //     return;
+    // }
+
+    // // 3. Cek file ada
+    // found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
+    // if (!found) {
+    //     printString("File tidak ditemukan\n");
+    //     return;
+    // }
+
+
 }
 void ls(char* param,char* currDir){
     printString("calling ls with parar : ");
