@@ -106,18 +106,6 @@ void printCurrDirName(int currDirIdx) {
 
     }
 
-    // while (filesIdx != 0xFF) {
-    //     // Cari nama folder sekarang
-    //     getFlName(files,filesIdx,currFlName);
-        
-    //     consdot(buffName,currFlName);
-    //     consdot(buffName,"/");
-    //     filesIdx = files[filesIdx*16];
-    // }
-
-    // consdot(buffName,"/root");
-    // printString(buffName);
-
 }
 
 
@@ -200,17 +188,20 @@ void cd(char* param,int* currDirIdx) {
 
 
 }
-
-
-void ls(char* param,int* currDirIdx){
+void ls(char* param,int* currDirIdx); {
     printString("calling ls with parar : ");
-    printString(param);
     printString("\n");
 }
-void cat(char* param,int* currDirIdx){
-    printString("calling cat with parar : ");
-    printString(param);
-    printString("\n");
+void cat(char* param, int* currDirIdx)  {
+    char buffer[1024];
+    int result;
+    result = 1;
+    readFile(buffer, param, result, currDirIdx);
+    if (result == -1) {
+        printString("File tidak ditemukan\n");
+    }
+    printString(buffer);
+    printString('\n');
 }
 // ln [-fs] [-L|-P] source_file target_file
 // example : ln test4.txt text6.txt made new file text6.txt that linked with test4.txt

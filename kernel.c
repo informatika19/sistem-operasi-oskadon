@@ -42,8 +42,8 @@ bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx
 void getFlName(char* files,char filesIdx, char* name);
 int foundEmptyDir(char* dir);
 void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name);
-bool isFirstLetter(char* first, char* compare);
-int findFileIndex(char parentIndex, char* path);
+//bool isFirstLetter(char* first, char* compare);
+//int findFileIndex(char parentIndex, char* path);
 
 
 // Fungsi Penunjang 2
@@ -70,7 +70,7 @@ int main() {
     // Tampilkan tampilan awal bios dengan graphic
     dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
     drawSomething();
-    interrupt(0x15,0x8600,0,10,0); // wait CK:100 = 1000 ms
+    interrupt(0x15,0x8600,0,30,0); // wait CK:100 = 1000 ms
 
     // Tampilkan tampilan awal bios dengan ASCII ART
     dump = modeScreen(0);    // Ganti mode menjadi text mode (Sekalian clear screen)
@@ -691,7 +691,7 @@ void drawSomething() {
 
 
 
-// Unused
+/*** Unused
 int findFileIndex(char* dir, char *path, int *result, char parentIndex) {
     // cari file ada di index keberapa di dir
     char files[1024], parent;
@@ -770,3 +770,4 @@ bool isFirstLetter(char* first, char* compare) {
 
     return true;
 }
+***/
