@@ -52,6 +52,7 @@ int div(int numerator, int denominator);
 int strlen(char* buff);
 int strcmp(char* a, char* b);
 int strcpy(char* dest, char* src);
+//int delFirstDigit(int num);
 // Fungsi Graphic dan Hiasan
 int modeScreen(int mode);
 void drawSquare();
@@ -65,7 +66,9 @@ int main() {
     char b1[512];
     char b2[512];
     int* sectors;
-
+    //char* tes1 = "test1";
+    //char* tes2 = "test4";
+    //char* tes3;
     // Tampilkan tampilan awal bios dengan graphic
     dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
     drawSomething();
@@ -89,6 +92,9 @@ int main() {
     b1[3] = 'd';
     // writeFile(b1,"/sys/cek3",sectors,0xFF);
     // readFile(b2,"/sys/cek3",sectors,0xFF);
+    //printInt(12);
+    //tes3 = append(tes1,tes2);
+    //printString(tes3);
     shell();
     // printString(b2);
 
