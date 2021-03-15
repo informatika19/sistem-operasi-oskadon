@@ -1,5 +1,6 @@
 application/cache
 **/image2binary
+**/.vscode
 system.img
 *.txt
 *.o
