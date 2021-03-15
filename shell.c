@@ -3,7 +3,7 @@ void shell();
 void executecmd(char* cmd);
 int modifiedstrcmp(char* a, char* b, int len,int start);
 int ignoreSpace(char* cmd, int start);
-
+int getParameterLength(char* cmd, int cmdIndex)
 
 void main(){
     char cmd[180];
@@ -67,4 +67,12 @@ int ignoreSpace(char* cmd, int start){ //return new index
         start++;
     }
     return start;
+}
+
+int getParameterLength(char* cmd, int cmdIndex){
+    int len = 0;
+    while(cmd[cmdIndex] != 0x20){
+        len++;
+    }
+    return len;
 }

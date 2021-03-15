@@ -31,6 +31,7 @@ int interrupt(int number, int AX, int BX, int CX, int DX);
 // Milestone 1
 void printString(char *string);
 void readString(char *string);
+void printInt(int num);
 
 // Milestone 2
 void readSector(char *buffer, int sector);
@@ -44,13 +45,19 @@ int mod(int dividend, int divisor);
 int div(int numerator, int denominator);    
 int strlen(char* buff);
 int strcmp(char* a, char* b);
+void strcpy(char* dest, char* src);
+int getFirstDigit(int num);
 // Fungsi Graphic dan Hiasan
 int modeScreen(int mode);
 void drawSquare();
 void drawSomething();
 void asciiART();
-
-
+//buatdebugging dulu sementara belum ada loadfile
+void shell();
+void executecmd(char* cmd);
+int modifiedstrcmp(char* a, char* b, int len,int start);
+int ignoreSpace(char* cmd, int start);
+int getParameterLength(char* cmd, int cmdIndex);
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
     int dump = interrupt(0x10,0x0003,0,0,0);    // Ganti mode menjadi text mode (Sekalian clear screen)
@@ -77,7 +84,8 @@ int main() {
     // writeSector(b1,0x104);
     readSector(b2,0x100);
     printString(b2);
-    
+    //printInt(123456);
+    shell();
     while (1) {
         // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
         
@@ -142,7 +150,62 @@ void printString(char *string) {
     
     
 }
+int getFirstDigit(int num){
+    while(num >= 10){
+        num = div(num,10);
+    }
+    return num;
+}
+void printDigit(int num){
+    num = mod(num,10);
+    switch (num)
+    {
+    case 0:
+        printString("0");
+        break;
+    case 1:
+        printString("1");
+        break;
+    case 2:
+        printString("2");
+        break;
+    case 3:
+        printString("3");
+        break;
+    case 4:
+        printString("4");
+        break;
+    case 5:
+        printString("5");
+        break;
+    case 6:
+        printString("6");
+        break;
+    case 7:
+        printString("7");
+        break;
+    case 8:
+        printString("8");
+        break;
+    case 9:
+        printString("9");
+        break;
+    default:
+        break;
+    }
+}
 
+void printInt(int num){
+    
+    int tempDigit;
+    printString("Calling PrintInt\n");
+    while(num >= 10){
+        tempDigit = getFirstDigit(num);
+        printDigit(tempDigit);
+        num = div(num,10);
+    }
+
+}
 // Membaca input dari pengguna
 void readString(char* string) {    
     int AL = 0x0E00;
@@ -380,6 +443,16 @@ int strcmp(char* a, char* b){
     return 1;
 }
 
+void strcpy(char* dest, char* src){
+    int i = 0;
+    int lenSrc;
+    clear(dest,strlen(dest));
+    lenSrc =  strlen(src);
+    for(i;i<lenSrc;i++){
+        dest[i] = src[i];
+    }
+
+}
 // Menggambar image di mode13, error jangan digunakan
 // void drawSomething() {
 //     extern char imageFile;
@@ -411,3 +484,74 @@ int strcmp(char* a, char* b){
 //     }
 //     // return;
 // }
+
+void shell(){
+    char cmd[180];
+    int test;
+    printString("Executing Shell...\n");
+    while(1){
+        printString("$ ");
+        //test = interrupt(INT_16H,0,0,0,0);
+        readString(cmd);
+        executecmd(cmd);
+    }
+
+}
+
+void executecmd(char* cmd){
+    int cmdIndex = 0;
+    int paramlength = 0;
+    while(1){ // implementasi jangan lupa ilangin loop dan breaknya
+        if(modifiedstrcmp(cmd,"cd",2,cmdIndex)){
+            cmdIndex += 2;
+            cmdIndex = ignoreSpace(cmd,cmdIndex);
+            paramlength = getParameterLength(cmd,cmdIndex);
+            printString("calling cd\n");
+            printInt(paramlength);
+        }else if(modifiedstrcmp(cmd,"ls",2,cmdIndex)){
+            cmdIndex += 2;
+            cmdIndex = ignoreSpace(cmd,cmdIndex);
+            printString("calling ls\n");
+        }else if(modifiedstrcmp(cmd,"cat",3,cmdIndex)){
+            cmdIndex += 3;
+            cmdIndex = ignoreSpace(cmd,cmdIndex);
+            printString("calling cat\n");
+        }else if(cmd[cmdIndex] == 0x0 || cmd[cmdIndex] == "\n"){
+            cmdIndex = ignoreSpace(cmd,cmdIndex);
+            printString("end of command\n");
+            break;
+        }else{
+            cmdIndex = ignoreSpace(cmd,cmdIndex);
+            printString("invalid command\n");
+            break;
+        }
+    }
+}
+
+int modifiedstrcmp(char* a, char* b, int len,int start){ //compare untuk beberapa char pertama aja dimulai dari index sesuati *buat shell
+    int i;
+    i = 0;
+    while(i < len){
+        if(a[start + i] != b[i]){
+            return 0;
+        }
+        i++;
+    }
+    return 1;
+}
+
+int ignoreSpace(char* cmd, int start) { //return new index
+    while(cmd[start] == 0x20){
+        start++;
+    }
+    return start;
+}
+int getParameterLength(char* cmd, int cmdIndex){
+    int len = 0;
+    printString("calling getParameterLength\n");
+    while(cmd[cmdIndex] != 0x20){
+        len++;
+        cmdIndex++;
+    }
+    return len;
+}
