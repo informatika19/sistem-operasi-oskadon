@@ -184,7 +184,7 @@ void ln(char* param,char* currDirIdx){
     int sectorSourcefileIdx;
     parentIndex  = *currDirIdx;
     i = 0;
-    while(param[i] != 0x20){
+    while(param[i] != ' '){
         sourceFileName[i] = param[i];
     }
     i = ignoreSpace(param,i);
@@ -192,8 +192,8 @@ void ln(char* param,char* currDirIdx){
     while(param[i+j] != 0x20 || param[i+j] != 0x0){
         targetFileName[j] = param[i+j];
     }
-    pathSource = append(currDirIdx,sourceFileName[180]);
-    pathTarget = append(currDirIdx,targetFileName[180]);
+    pathSource = *sourceFileName; // pathSource = ./folder/file ; currDirIdx = 0xFF
+    pathTarget = *targetFileName;
     //below is from readFile from kernel.c
     
     // 0. inisialisasi
@@ -275,8 +275,8 @@ void ln(char* param,char* currDirIdx){
 }
 
 char* append(char* first, char* last){
-    //int lenResult;
-    char result[strlen(first) + strlen(last)]; 
+    //const int lenResult = strlen(first) + strlen(last);
+    char result[256]; 
     int i,j;
     i = 0;
     for(i;i<strlen(first);i++){

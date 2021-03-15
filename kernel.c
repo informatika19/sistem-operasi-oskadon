@@ -89,7 +89,7 @@ int main() {
     b1[3] = 'd';
     // writeFile(b1,"/sys/cek3",sectors,0xFF);
     // readFile(b2,"/sys/cek3",sectors,0xFF);
-    //shell();
+    shell();
     // printString(b2);
 
     while (1) {
