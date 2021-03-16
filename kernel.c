@@ -106,6 +106,7 @@ int main() {
     printInteger(12345);
     printString("\n");
     */
+    writeFile("KLMNO", "coba", sectors,0xFF);
     writeFile("test123123","sys/test/t1",sectors,0xFF);
     readFile(b2,"sys/test/t1",sectors,0xFF);
     printString(b2);
