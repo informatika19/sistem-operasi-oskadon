@@ -50,6 +50,10 @@ void executecmd(char* cmd, char* currDirIdx){
         cmdIndex += 3;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
         cat(&cmd[cmdIndex],currDirIdx);
+    }else if (modifiedstrcmp(cmd,"ln",2,cmdIndex)){
+        cmdIndex += 2;
+        cmdIndex = ignoreSpace(cmd,cmdIndex);
+        ln(&cmd[cmdIndex],currDirIdx);
     }else{
         cmdIndex = ignoreSpace(cmd,cmdIndex);
         printString("invalid command\n");
@@ -187,16 +191,37 @@ void ln(char* param,char* currDirIdx){
     char* foundIdx;
     int dirNum,dirIdx;
     int sectorSourcefileIdx;
+    int soft = 0;
+    int z = 0;
+ 
+    if(modifiedstrcmp(param,"-s",2,0)){
+        z = 2;
+        soft = 1;
+        z = ignoreSpace(param,z);
+        param = &(param[z]);  
+    }
     parentIndex  = *currDirIdx;
     i = 0;
     while(param[i] != ' '){
         sourceFileName[i] = param[i];
+        i++;
     }
     i = ignoreSpace(param,i);
     j = 0;
-    while(param[i+j] != 0x20 || param[i+j] != 0x0){
+    while(!(param[i+j] == 0x20 || param[i+j] == 0x0)){
         targetFileName[j] = param[i+j];
+        j++;
     }
+    if(soft){
+        printString("soft linking\n");
+    }else{
+        printString("hard linking\n");
+    }
+    printString("src file = ");
+    printString(sourceFileName);
+    printString("\ntarget file = ");
+    printString(targetFileName);
+    printString("\n");
     pathSource = *sourceFileName; // pathSource = ./folder/file ; currDirIdx = 0xFF
     pathTarget = *targetFileName;
     //below is from readFile from kernel.c
@@ -211,7 +236,7 @@ void ln(char* param,char* currDirIdx){
     j = 0;
     if (currDirIdx[i] == '/') { // root dir 
         currParentIdx = 0xFF;
-        i += 1;
+        i += 1; 
     } else if (pathSource[i] == '.' && pathSource[i+1] == '/') { // current dir (spesifik)
         currParentIdx = parentIndex;
         i += 2;
@@ -256,6 +281,8 @@ void ln(char* param,char* currDirIdx){
     }
 
     // 3. Cek file ada
+    printString("\ncurrFlName = ");
+    printString(currFlName);
     found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
     if (!found) {
         printString("File tidak ditemukan\n");

@@ -30,7 +30,8 @@ int interrupt(int number, int AX, int BX, int CX, int DX);
 // Milestone 1
 void printString(char *string);
 void readString(char *string);
-
+void printInteger(int num);
+char IntToChar(int num);
 // Milestone 2
 void readSector(char *buffer, int sector);
 void writeSector(char *buffer, int sector);
@@ -95,6 +96,16 @@ int main() {
     //printInt(12);
     //tes3 = append(tes1,tes2);
     //printString(tes3);
+    /*
+    printString("1");
+    printString("2");
+    printString("3");
+    printString("4");
+    printString("5\n");
+    printInteger(12345);
+    printString("\n");
+    */
+   writeFile("test123123","test",sectors,0xFF);
     shell();
     // printString(b2);
 
@@ -194,6 +205,77 @@ void readString(char* string) {
     }   
 }
 
+void printInteger(int num){
+    char Result[20];
+    int i;
+    int temp;
+    char tempchar;
+    i  = 0;
+    //clear(Result,20);
+    while(num >= 1){
+        temp = mod(num,10);
+        Result[i] = IntToChar(temp);
+        //printString(Result[i]);
+        i++;
+        num = div(num,10);
+    }
+    i--;
+    while(i > 0){
+        tempchar = Result[i];
+        printString(tempchar);
+        i--;
+    }
+}
+char IntToChar(int num){
+    switch (num)
+    {
+    case 0:
+        printString("0");
+        return "0";
+        break;
+    case 1:
+        printString("1");
+        return "1";
+        break;
+    case 2:
+    printString("2");
+        return "2";
+        break;
+    case 3:
+    printString("3");
+        return "3";
+        break;
+    case 4:
+    printString("4");
+        return "4";
+        break;
+    case 5:
+    printString("5");
+        return "5";
+        break;
+    case 6:
+    printString("6");
+        return "6";
+        break;
+    case 7:
+    printString("7");
+        return "7";
+        break;
+    case 8:
+    printString("8");
+        return "8";
+        break;
+    case 9:
+    printString("9");
+        return "9";
+        break;
+    
+    default:
+    printString("X");
+        return "X";
+        break;
+    }
+}
 
 void readSector(char *buffer, int sector) {
     int AL = 0x0200;
