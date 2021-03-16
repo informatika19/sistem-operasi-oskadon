@@ -40,6 +40,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex);
 
 // Fungsi Penunjang 1
 bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx);
+void getFlName(char* files,char filesIdx, char* name);
 int foundEmptyDir(char* dir);
 void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name);
 //bool isFirstLetter(char* first, char* compare);
@@ -87,11 +88,11 @@ int main() {
     
     // Test writeFile
     // printString("t0\n");
-    b1[0] = 'a';
-    b1[1] = 'b';
-    b1[2] = 'c';
-    b1[3] = 'd';
-    // writeFile(b1,"/sys/cek3",sectors,0xFF);
+    // b1[0] = 'a';
+    // b1[1] = 'b';
+    // b1[2] = 'c';
+    // b1[3] = 'd';
+    // writeFile(b1,"i1/i2/../i3",sectors,0xFF);
     // readFile(b2,"/sys/cek3",sectors,0xFF);
     //printInt(12);
     //tes3 = append(tes1,tes2);
@@ -339,56 +340,74 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     // 3a. Buat folder
     i = 0;
     j = 0;
-    if (path[i] == '/') { // root files 
+    if (path[i] == '/') {   // dari root
         currParentIdx = 0xFF;
-        i += 1;
-    } else if (path[i] == '.' && path[i+1] == '/') { // current files (spesifik)
-        currParentIdx = parentIndex;
-        i += 2;
-    } else {    // current files (default)
+        i++;  
+    } else {
         currParentIdx = parentIndex;
     }
 
+    
     while (path[i] != '\0') {
         currFlName[j] = path[i];
+        
         if (currFlName[j] == '/') {
+            
             currFlName[j] = '\0';
-            // Cek apakah nama folder valid (tidak boleh kosong)
-            if (strcmp(currFlName,"")) {
-                printString("Nama folder tidak valid");
-                *sectors = -5;
-                return;
-            }
-             
-            // Cek apakah sudah tersedia folder yang sama
-            found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-            if (found) {
-                printString("Folder sudah ada\n");
-                currParentIdx = *foundIdx;
-                // printString(currParentIdx);
-            } else {
-                // cari files yang kosong
-                filesIdx = foundEmptyDir(files);
-                if (filesIdx == -1) {
-                    printString("Tidak cukup entri di files\n");
-                    *sectors = -2;
-                    return;
+
+            if (strcmp(currFlName,".")) 
+            {
+                // Do Nothing, di curr dir yang sama
+            } 
+            else if (strcmp(currFlName,"..")) 
+            {   // Back to parent
+                if (currParentIdx != 0xFF) {    // Bukan di root
+                    // Cari parent folder ini
+                    currParentIdx = files[(currParentIdx)*16];
                 }
+                // kalau di root do nothing aja
+            } 
+            else if (strcmp(currFlName,"")) 
+            {
+                printString("Error: Nama folder tidak valid\n");
+                 *sectors = -5;
+                return;
+            } else {
+                // Cek apakah sudah tersedia folder yang sama
+                found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+                if (found) {
+                    printString("Folder sudah ada\n");
+                    currParentIdx = *foundIdx;
+                    // printString(currParentIdx);
+                } else {
+                    // cari files yang kosong
+                    filesIdx = foundEmptyDir(files);
+                    if (filesIdx == -1) {
+                        printString("Tidak cukup entri di files\n");
+                        *sectors = -2;
+                        return;
+                    }
 
-                filesNum = filesIdx*16;
-                // buat folder baru
-                writeDir(files,filesNum,currParentIdx,0xFF,currFlName);
+                    filesNum = filesIdx*16;
+                    // buat folder baru
+                    writeDir(files,filesNum,currParentIdx,0xFF,currFlName);
 
-                currParentIdx = filesIdx;
+                    currParentIdx = filesIdx;
+                }
             }
-            j = 0;
+            
+
+            j = 0;  
         } else {
             j++;
         }
         i++;
+        
     }
-
-    // Cek apakah nama file valid (tidak boleh kosong)
+    currFlName[j] = path[i];
+    // Cek apakah nama file valid (tidak boleh kosong, kalau kosong berarti cuma create folder doang)
+    
+    
     if (strcmp(currFlName,"")) {
         printString("Nama file tidak valid");
         *sectors = -5;
@@ -551,26 +570,24 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
 // Fungsionalitas Tambahan
 bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx) {
     // return index file yang ditemukan pada foundIdx
-    int i,j;
+    int filesIdx,j;
     char buffName[15];
     bool found = false;
 
-    i = 0;
-    while (i < 64 && !found) {
-        if (dir[16*i] == parrentIdx) {            // kalau ternyata ada yang parent indexnya sama
-            for (j = 0; j < 14; j++) {
-                buffName[j] = dir[16*i+(2+j)];    
-            }
-            buffName[14] = '\0';
+    filesIdx = 0;
+    while (filesIdx < 64 && !found) {
+        if (dir[16*filesIdx] == parrentIdx) {            // kalau ternyata ada yang parent indexnya sama
+            getFlName(dir,filesIdx,buffName);
             if (strcmp(buffName,name)) {         // cek apakah namanya sama
-                if ((folder && dir[16*i+1] == 0xFF) || (!folder && dir[16*i+1] != 0xFF)) {  // cek jenisnya sama
+                
+                if ((folder && dir[16*filesIdx+1] == 0xFF) || (!folder && dir[16*filesIdx+1] != 0xFF)) {  // cek jenisnya sama
                     found = true;
                 }   
             }
         }
-        i++; 
+        filesIdx++; 
     }
-    *foundIdx = --i;
+    *foundIdx = --filesIdx;
     return found;
 }
 
@@ -596,6 +613,15 @@ int foundEmptyDir(char* dir) {
     
 }
 
+void getFlName(char* files,char filesIdx, char* name) {
+    int i;
+
+    for (i = 0; i < 14; i++) {
+        name[i] = files[16*filesIdx+(2+i)];    
+    }
+    name[14] = '\0';
+}
+
 
 void writeDir(char* files, int filesNum, int parrentIdx, int sectorIdx, char* name) {
     int i,j;
@@ -605,7 +631,7 @@ void writeDir(char* files, int filesNum, int parrentIdx, int sectorIdx, char* na
     i = filesNum + 2;
     
     j = 0;
-    while (i < filesNum+16 && j < strlen(name)) { 
+    while (i < filesNum+15 && j < strlen(name)) { 
         files[i] = name[j];
         i++;
         j++;
