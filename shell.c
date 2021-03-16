@@ -10,7 +10,7 @@ void printCurrDirName(int currDirIdx);
 void cd(char* param,int* currDirIdx);
 void ls(int* currDirIdx);
 void cat(char* param,int* currDirIdx);
-void ln(char* param,int* currDirIdx);
+void ln(char* param,int currDirIdx);
 
 void consdot(char* dest, char* add);
 char* append(char* first, char* last);
@@ -56,7 +56,7 @@ void executecmd(char* cmd, int* currDirIdx){
     }else if (modifiedstrcmp(cmd,"ln",2,cmdIndex)){
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
-        ln(&cmd[cmdIndex],currDirIdx);
+        ln(&cmd[cmdIndex],*currDirIdx);
     }else{
         cmdIndex = ignoreSpace(cmd,cmdIndex);
         printString("invalid command\n");
@@ -232,11 +232,11 @@ void cat(char* param, int* currDirIdx)  {
         printString("File tidak ditemukan\n");
     }
     printString(buffer);
-    printString('\n');
+    printString("\n");
 }
 // ln [-fs] [-L|-P] source_file target_file
 // example : ln test4.txt text6.txt made new file text6.txt that linked with test4.txt
-void ln(char* param,int* currDirIdx){
+void ln(char* param,int currDirIdx){
     int i,j;
     char sourceFileName[180];
     char targetFileName[180];
@@ -255,14 +255,14 @@ void ln(char* param,int* currDirIdx){
     int soft = 0;
     int z = 0;
     int filesNum,filesIdx;
- 
+
     if(modifiedstrcmp(param,"-s",2,0)){
         z = 2;
         soft = 1;
         z = ignoreSpace(param,z);
         param = &(param[z]);  
     }
-    parentIndex  = *currDirIdx;
+    parentIndex  = currDirIdx;
     i = 0;
     while(param[i] != ' '){
         sourceFileName[i] = param[i];

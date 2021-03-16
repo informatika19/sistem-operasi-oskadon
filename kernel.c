@@ -68,6 +68,7 @@ int main() {
     char b1[512];
     char b2[512];
     int* sectors;
+    int ascii;
     //char* tes1 = "test1";
     //char* tes2 = "test4";
     //char* tes3;
@@ -106,10 +107,21 @@ int main() {
     printInteger(12345);
     printString("\n");
     */
-    writeFile("KLMNO", "coba", sectors,0xFF);
-    writeFile("test123123","sys/test/t1",sectors,0xFF);
-    readFile(b2,"sys/test/t1",sectors,0xFF);
-    printString(b2);
+    ascii = interrupt(INT_16H,0,0,0,0);
+    printString("\n");
+    printInteger(ascii);
+    printString("\n");
+    if(ascii > -5){
+        printString("ascii > -5\n");
+    }
+    if(ascii <= -5){
+        printString("ascii <= -5\n");
+    }
+    //printInteger(12345);
+    //writeFile("KLMNO", "coba", sectors,0xFF);
+    //writeFile("test123123","sys/test/t1",sectors,0xFF);
+    //readFile(b2,"sys/test/t1",sectors,0xFF);
+    //printString(b2);
     shell();
     // printString(b2);
 
