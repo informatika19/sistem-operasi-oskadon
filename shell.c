@@ -226,11 +226,15 @@ void ls(int* currDirIdx) {
 void cat(char* param, int* currDirIdx)  {
     char buffer[1024];
     int result;
+    int tmp;
     result = 1;
-    readFile(buffer, param, result, currDirIdx);
+
+    tmp = *currDirIdx;
+    readFile(buffer, param, result, *currDirIdx);
     if (result == -1) {
         printString("File tidak ditemukan\n");
     }
+    *currDirIdx = tmp;
     printString(buffer);
     printString("\n");
 }

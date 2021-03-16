@@ -597,7 +597,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
         return;
     }
 
-    printString("File ditemukan\n");
+    //printString("File ditemukan\n");
     fileIdx = *foundIdx;
 
     // Read sector index
