@@ -211,7 +211,7 @@ void ls(int* currDirIdx) {
     while (i < 32) {
         if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
             printString(dir[i * 16 + 1]);
-            printString('\n\r');
+            printString("\n\r");
         }
         i += 1;
     }
@@ -221,7 +221,7 @@ void ls(int* currDirIdx) {
     while (i < 32) {
         if (file[i * 16] == parentIdx && file[i * 16 + 1] != '\0') {
             printString(file[i * 16 + 1]);
-            printString('\n\r');
+            printString("\n\r");
         }
         i += 1;
     }
