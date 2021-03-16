@@ -257,7 +257,7 @@ void ln(char* param,int* currDirIdx){
     char parentIndex;
     int sectNum, sectPos, sectIdx, fileSourceIdx;
     int found;
-    char* foundIdx;
+    int* foundIdx;
     int dirNum,dirIdx;
     int sectorSourcefileIdx;
     int soft = 0;
@@ -291,8 +291,8 @@ void ln(char* param,int* currDirIdx){
     printString("\ntarget file = ");
     printString(targetFileName);
     printString("\n");
-    pathSource = *sourceFileName; // pathSource = ./folder/file ; currDirIdx = 0xFF
-    pathTarget = *targetFileName;
+    pathSource = sourceFileName; // pathSource = ./folder/file ; currDirIdx = 0xFF
+    pathTarget = targetFileName;
     //below is from readFile from kernel.c
     
     // 0. inisialisasi
@@ -316,7 +316,10 @@ void ln(char* param,int* currDirIdx){
     // 2. Cari pathSource sampe ketemu bagian file
     while (pathSource[i] != '\0') {
         currFlName[j] = pathSource[i];
+        printString("\ncurrFlName1 = ");
+        printString(currFlName);
         if (currFlName[j] == '/') {
+
             currFlName[j] = '\0';
             // Cek apakah nama folder valid (tidak boleh kosong)
             if (strcmp(currFlName,"")) {
@@ -350,8 +353,8 @@ void ln(char* param,int* currDirIdx){
     }
 
     // 3. Cek file ada
-    printString("\ncurrFlName = ");
-    printString(currFlName);
+    //printString("\ncurrFlName = ");
+    //printString(currFlName);
     found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
     if (!found) {
         printString("File tidak ditemukan\n");
@@ -372,7 +375,17 @@ void ln(char* param,int* currDirIdx){
     dirNum = dirIdx*16;
     // 5. Buat File
     sectorSourcefileIdx = files[fileSourceIdx*16+1];
-    writeDir(files,dirNum,currParentIdx,sectorSourcefileIdx,currFlName);
+    //strcpy(currFlName,targetFileName);
+    printString(targetFileName);
+    printString("\n");
+    writeDir(files,dirNum,currParentIdx,sectorSourcefileIdx,targetFileName);
+
+    //writeSector(map,0x100);
+	writeSector(files,0x101);
+    writeSector(files+512,0x102);
+    printString("Linking Success!\n");
+    //*sectors = secIdx;
+    return;
 }
 
 void consdot(char* dest, char* add) {
