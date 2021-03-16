@@ -259,6 +259,7 @@ void ln(char* param,int* currDirIdx){
     int sectorSourcefileIdx;
     int soft = 0;
     int z = 0;
+    int filesNum,filesIdx;
  
     if(modifiedstrcmp(param,"-s",2,0)){
         z = 2;
@@ -300,48 +301,61 @@ void ln(char* param,int* currDirIdx){
     // 1. cari folder dan file
     i = 0;
     j = 0;
-    if (currDirIdx[i] == '/') { // root dir 
+    if (pathSource[i] == '/') {   // dari root
         currParentIdx = 0xFF;
-        i += 1; 
-    } else if (pathSource[i] == '.' && pathSource[i+1] == '/') { // current dir (spesifik)
-        currParentIdx = parentIndex;
-        i += 2;
-    } else {    // current dir (default)
+        i++;  
+    } else {
         currParentIdx = parentIndex;
     }
 
-    // 2. Cari pathSource sampe ketemu bagian file
+    // 2. Cari path sampe ketemu bagian file
     while (pathSource[i] != '\0') {
         currFlName[j] = pathSource[i];
-        printString("\ncurrFlName1 = ");
-        printString(currFlName);
+        
         if (currFlName[j] == '/') {
-
+            
             currFlName[j] = '\0';
-            // Cek apakah nama folder valid (tidak boleh kosong)
-            if (strcmp(currFlName,"")) {
-                printString("Nama folder tidak valid");
-                //*result = -5;
+
+            if (strcmp(currFlName,".")) 
+            {
+                // Do Nothing, di curr dir yang sama
+            } 
+            else if (strcmp(currFlName,"..")) 
+            {   // Back to parent
+                if (currParentIdx != 0xFF) {    // Bukan di root
+                    // Cari parent folder ini
+                    currParentIdx = files[(currParentIdx)*16];
+                }
+                // kalau di root do nothing aja
+            } 
+            else if (strcmp(currFlName,"")) 
+            {
+                printString("Error: Nama folder tidak valid\n");
+                 //*result = -5;
                 return;
-            }
-             
-            // Cek apakah sudah tersedia folder yang sama
-            found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-            if (found) {
-                printString("Folder sudah ada\n");
-                currParentIdx = *foundIdx;
-                // printString(currParentIdx);
             } else {
-                printString("Folder tidak ditemukan\n");
-                //*result = -1;
-                return;
+                // Cek apakah sudah tersedia folder yang sama
+                found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+                if (found) {
+                    printString("Folder sudah ada\n");
+                    currParentIdx = *foundIdx;
+                    // printString(currParentIdx);
+                } else {
+                    printString("Folder tidak ditemukan\n");
+                    //*result = -1;
+                    return;
+                }
             }
-            j = 0;
+            j = 0;  
         } else {
             j++;
         }
         i++;
+        
     }
+    currFlName[j] = pathSource[i];
+
+    
     // Cek apakah nama file valid (tidak boleh kosong)
     if (strcmp(currFlName,"")) {
         printString("Nama file tidak valid");
@@ -362,20 +376,118 @@ void ln(char* param,int* currDirIdx){
     fileSourceIdx = *foundIdx;
 
     //yang dibawah sekarang copy dari write file
-    // cari dir yang kosong
-    dirIdx = foundEmptyDir(files);
-    if (dirIdx == -1) {
+    // 2. Cek parrent folder valid
+    found = false;
+    if (parentIndex == 0xFF) { // folder di root
+        found = true;
+    } else if (files[16*parentIndex+1] == 0xFF) { // sebuah folder
+        found = true;
+    }
+
+    if (!found) {
+        printString("Folder tidak valid\n");
+        //*sectors = -4;
+        return;
+    }
+    
+
+    // 3. Atur bagian path
+    // 3a. Buat folder
+    i = 0;
+    j = 0;
+    if (pathTarget[i] == '/') {   // dari root
+        currParentIdx = 0xFF;
+        i++;  
+    } else {
+        currParentIdx = parentIndex;
+    }
+
+    
+    while (pathTarget[i] != '\0') {
+        currFlName[j] = pathTarget[i];
+        
+        if (currFlName[j] == '/') {
+            
+            currFlName[j] = '\0';
+
+            if (strcmp(currFlName,".")) 
+            {
+                // Do Nothing, di curr dir yang sama
+            } 
+            else if (strcmp(currFlName,"..")) 
+            {   // Back to parent
+                if (currParentIdx != 0xFF) {    // Bukan di root
+                    // Cari parent folder ini
+                    currParentIdx = files[(currParentIdx)*16];
+                }
+                // kalau di root do nothing aja
+            } 
+            else if (strcmp(currFlName,"")) 
+            {
+                printString("Error: Nama folder tidak valid\n");
+                 //*sectors = -5;
+                return;
+            } else {
+                // Cek apakah sudah tersedia folder yang sama
+                found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+                if (found) {
+                    printString("Folder sudah ada\n");
+                    currParentIdx = *foundIdx;
+                    // printString(currParentIdx);
+                } else {
+                    // cari files yang kosong
+                    filesIdx = foundEmptyDir(files);
+                    if (filesIdx == -1) {
+                        printString("Tidak cukup entri di files\n");
+                        //*sectors = -2;
+                        return;
+                    }
+
+                    filesNum = filesIdx*16;
+                    // buat folder baru
+                    writeDir(files,filesNum,currParentIdx,0xFF,currFlName);
+
+                    currParentIdx = filesIdx;
+                }
+            }
+            
+
+            j = 0;  
+        } else {
+            j++;
+        }
+        i++;
+        
+    }
+    currFlName[j] = pathTarget[i];
+    // Cek apakah nama file valid (tidak boleh kosong, kalau kosong berarti cuma create folder doang)
+    
+    
+    if (strcmp(currFlName,"")) {
+        printString("Nama file tidak valid");
+        //*sectors = -5;
+        return;
+    }
+
+    // 3b. Cek apakah sudah file udah ada
+    found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
+    if (found) {
+        printString("File sudah ada\n");
+        //*sectors = -1;
+        return;
+    }
+    // cari files yang kosong
+    filesIdx = foundEmptyDir(files);
+    if (filesIdx == -1) {
         printString("Tidak cukup entri di files\n");
         //*sectors = -2;
         return;
     }
-    dirNum = dirIdx*16;
+    filesNum = filesIdx*16;
+
+
     // 5. Buat File
-    sectorSourcefileIdx = files[fileSourceIdx*16+1];
-    //strcpy(currFlName,targetFileName);
-    printString(targetFileName);
-    printString("\n");
-    writeDir(files,dirNum,currParentIdx,sectorSourcefileIdx,targetFileName);
+    writeDir(files,filesNum,currParentIdx,files[fileSourceIdx*16+1],currFlName);
 
     //writeSector(map,0x100);
 	writeSector(files,0x101);
