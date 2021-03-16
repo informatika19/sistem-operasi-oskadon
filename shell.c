@@ -132,7 +132,7 @@ void cd(char* param,int* currDirIdx) {
     
     i = 0;
     j = 0;
-    if (param[i] = '/') {   // dari root
+    if (param[i] == '/') {   // dari root
         *currDirIdx = 0xFF;
         i++;  
     }
@@ -181,10 +181,7 @@ void cd(char* param,int* currDirIdx) {
             j++;
         }
 
-        i++;
-
-        
-             
+        i++;        
     }
 
 
