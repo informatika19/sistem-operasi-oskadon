@@ -107,16 +107,7 @@ int main() {
     printInteger(12345);
     printString("\n");
     */
-    ascii = interrupt(INT_16H,0,0,0,0);
-    printString("\n");
-    printInteger(ascii);
-    printString("\n");
-    if(ascii > -5){
-        printString("ascii > -5\n");
-    }
-    if(ascii <= -5){
-        printString("ascii <= -5\n");
-    }
+
     //printInteger(12345);
     //writeFile("KLMNO", "coba", sectors,0xFF);
     //writeFile("test123123","sys/test/t1",sectors,0xFF);
