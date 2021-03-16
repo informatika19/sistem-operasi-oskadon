@@ -193,7 +193,6 @@ void cd(char* param,int* currDirIdx) {
 void ls(int* currDirIdx) {
     char dir[512];
     char file[512];
-    char args[512];
     int i;
     int parentIdx;
 
@@ -203,15 +202,11 @@ void ls(int* currDirIdx) {
     readSector(dir, 0x101);
     readSector(file, 0x102);
 
-    // get current working directory
-    readSector(args, 0x200);
-    parentIdx = args[0];
-
     // print dir
     i = 0;
     while (i < 32) {
         if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
-            printString(dir[i * 16 + 1]);
+            printString(dir+(i * 16 + 1));
             printString("\n\r");
         }
         i += 1;
@@ -221,7 +216,7 @@ void ls(int* currDirIdx) {
     i = 0;
     while (i < 32) {
         if (file[i * 16] == parentIdx && file[i * 16 + 1] != '\0') {
-            printString(file[i * 16 + 1]);
+            printString(file+(i * 16 + 1));
             printString("\n\r");
         }
         i += 1;
