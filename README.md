@@ -14,8 +14,9 @@ sudo apt install nasm bcc bin86 bochs bochs-x
 ```
 
 ## How to Use
-- Siapkan disk image, compile dan masukkan bootloader ke dalam disk image tersebut. Dapat langsung menggunakan perintah `bash ./initialization.sh` pada terminal linux
-- Compile kernel lalu masukkan ke dalam disk image. Dapat langsung dijalankan dengan perintah `bash ./script.sh` pada terminal linux.
-- Untuk menjalankan emulator bochs bisa dijalankan dengan perintah `bochs -f if2230.config` pada terminal linux dan pencet c.
+- Siapkan disk image, compile dan masukkan bootloader ke dalam disk image tersebut. Dapat langsung menggunakan perintah `bash ./init.sh` pada terminal linux
+- Masukan filesystem ke dalam disk image. Dapat langsung dijalankan dengan perintah `bash ./compile_fs.sh` pada terminal linux.
+- Compile kernel dan shell lalu masukkan ke dalam disk image. Dapat langsung dijalankan dengan perintah `bash ./compile.sh` pada terminal linux.
+- Untuk menjalankan emulator bochs bisa dijalankan dengan perintah `bochs -f if2230.config` pada terminal linux dan tekan c lalu enter.
 
 *untuk cara kerja bisa dibaca pada MILESTONE1.md

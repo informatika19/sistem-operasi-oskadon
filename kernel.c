@@ -65,65 +65,27 @@ void asciiART();
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
     int dump;
-    char b1[512];
-    char b2[512];
-    int* sectors;
-    int ascii;
-    //char* tes1 = "test1";
-    //char* tes2 = "test4";
-    //char* tes3;
+
     // Tampilkan tampilan awal bios dengan graphic
-    // dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
-    // drawSomething();
-    // interrupt(0x15,0x8600,0,30,0); // wait CK:100 = 1000 ms
+    dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
+    drawSomething();
+    interrupt(0x15,0x8600,0,30,0); // wait CK:100 = 1000 ms
 
     // Tampilkan tampilan awal bios dengan ASCII ART
     dump = modeScreen(0);    // Ganti mode menjadi text mode (Sekalian clear screen)
-    // handleInterrupt21(0,"\n",0,0);
-    // asciiART();
-    // handleInterrupt21(0,"\n",0,0);
-    // handleInterrupt21(0,"\n",0,0);
+    handleInterrupt21(0,"\n",0,0);
+    asciiART();
+    handleInterrupt21(0,"\n",0,0);
+    handleInterrupt21(0,"\n",0,0);
 
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
-    
-    // Test writeFile
-    // printString("t0\n");
-    // b1[0] = 'a';
-    // b1[1] = 'b';
-    // b1[2] = 'c';
-    // b1[3] = 'd';
-    // writeFile(b1,"i1/i2/../i3",sectors,0xFF);
-    // readFile(b2,"/sys/cek3",sectors,0xFF);
-    //printInt(12);
-    //tes3 = append(tes1,tes2);
-    //printString(tes3);
-    /*
-    printString("1");
-    printString("2");
-    printString("3");
-    printString("4");
-    printString("5\n");
-    printInteger(12345);
-    printString("\n");
-    */
-
-    //printInteger(12345);
-    //writeFile("KLMNO", "coba", sectors,0xFF);
-    //writeFile("test123123","sys/test/t1",sectors,0xFF);
-    //readFile(b2,"sys/test/t1",sectors,0xFF);
-    //printString(b2);
     shell();
-    // printString(b2);
+
 
     while (1) {
         // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
-        
         readString(buff);
-        //if(strcmp(cmd,"c")){
-        //    printString("calling cd\n");
-        //}
-        //launchProgram()
         printString(buff);
         printString("\n");
     };
@@ -152,18 +114,34 @@ int modeScreen(int mode) {
 }
 
 // Membuat Interupt21 (DOS Interupt) untuk menjalankan perintah dari pengguna
-void handleInterrupt21 (int AX, int BX, int CX, int DX){
-    switch (AX) {
-        case 0x0:
-            printString(BX);
+void handleInterrupt21 (int AX, int BX, int CX, int DX) { 
+    char AL, AH; 
+    AL = (char) (AX); 
+    AH = (char) (AX >> 8); 
+    switch (AL) { 
+        case 0x00: 
+            printString(BX); 
+            break; 
+        case 0x01: 
+            readString(BX); 
+            break; 
+        case 0x02: 
+            readSector(BX, CX); 
+            break; 
+        case 0x03: 
+            writeSector(BX, CX); 
+            break; 
+        case 0x04: 
+            readFile(BX, CX, DX, AH); 
+            break; 
+        case 0x05: 
+            writeFile(BX, CX, DX, AH); 
             break;
-        case 0x1:
-            readString(BX);
-            break;
-        default:
-            printString("Invalid interrupt");
-    }
+        default: 
+            printString("Invalid interrupt\n"); 
+    } 
 }
+
 
 // Menampilkan string/tulisan pada layar
 void printString(char *string) {
@@ -415,7 +393,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     
     
     if (strcmp(currFlName,"")) {
-        printString("Nama file tidak valid");
+        printString("Nama file tidak valid\n");
         *sectors = -5;
         return;
     }
@@ -585,7 +563,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
 
     // Cek apakah nama file valid (tidak boleh kosong)
     if (strcmp(currFlName,"")) {
-        printString("Nama file tidak valid");
+        printString("Nama file tidak valid\n");
         *result = -5;
         return;
     }
@@ -594,6 +572,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
     found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
     if (!found) {
         printString("File tidak ditemukan\n");
+        *result = -1;
         return;
     }
 

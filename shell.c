@@ -18,10 +18,6 @@ char* append(char* first, char* last);
 void shell(){
     char cmd[180];
     int* currDirIdx;  // directory sekarang
-    //char cmd1[180]; //history
-    //char cmd2[180]; //history
-    //char cmd3[180]; //history
-    //int HistHEAD = 1;
 
     // Inisialisasi
     printString("Executing Shell...\n");
@@ -31,10 +27,7 @@ void shell(){
         printString(" $ ");
         readString(cmd);
         executecmd(cmd,currDirIdx);
-        //strcpy(cmd2,cmd3);
-        //strcpy(cmd1,cmd2);
-        //strcpy(cmd,cmd1);
-        //clear(cmd,180);
+
     }
 
 }
@@ -230,13 +223,17 @@ void cat(char* param, int* currDirIdx)  {
     result = 1;
 
     tmp = *currDirIdx;
-    readFile(buffer, param, result, *currDirIdx);
+    readFile(buffer, param, &result, *currDirIdx);
     if (result == -1) {
-        printString("File tidak ditemukan\n");
+        *currDirIdx = tmp;
+        //printString("ERROR : File tidak ditemukan\n");
+        return;
+    }else{
+        *currDirIdx = tmp;
+        printString(buffer);
+        printString("\n");
     }
-    *currDirIdx = tmp;
-    printString(buffer);
-    printString("\n");
+    
 }
 // ln [-fs] [-L|-P] source_file target_file
 // example : ln test4.txt text6.txt made new file text6.txt that linked with test4.txt
@@ -259,7 +256,8 @@ void ln(char* param,int currDirIdx){
     int soft = 0;
     int z = 0;
     int filesNum,filesIdx;
-
+    sourceFileName[0] = '\0';
+    targetFileName[0] = '\0';
     if(modifiedstrcmp(param,"-s",2,0)){
         z = 2;
         soft = 1;
@@ -268,7 +266,7 @@ void ln(char* param,int currDirIdx){
     }
     parentIndex  = currDirIdx;
     i = 0;
-    while(param[i] != ' '){
+    while(param[i] != ' '|| param[i+j] == 0x0){
         sourceFileName[i] = param[i];
         i++;
     }
@@ -288,6 +286,11 @@ void ln(char* param,int currDirIdx){
     printString("\ntarget file = ");
     printString(targetFileName);
     printString("\n");
+    if(strlen(targetFileName) == 0 || strlen(sourceFileName) == 0){
+        printString("Terminationg\n");
+        return;
+    }
+
     pathSource = sourceFileName; // pathSource = ./folder/file ; currDirIdx = 0xFF
     pathTarget = targetFileName;
     //below is from readFile from kernel.c
@@ -357,7 +360,7 @@ void ln(char* param,int currDirIdx){
     
     // Cek apakah nama file valid (tidak boleh kosong)
     if (strcmp(currFlName,"")) {
-        printString("Nama file tidak valid");
+        printString("Nama file tidak valid\n");
         //*result = -5;
         return;
     }
@@ -463,7 +466,7 @@ void ln(char* param,int currDirIdx){
     
     
     if (strcmp(currFlName,"")) {
-        printString("Nama file tidak valid");
+        printString("Nama file tidak valid\n");
         //*sectors = -5;
         return;
     }
