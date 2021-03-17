@@ -3,7 +3,7 @@
 #define false 0
 
 void shell();
-void executecmd(char* cmd,int* currDirIdx);
+void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3,int* currDirIdx);
 int modifiedstrcmp(char* a, char* b, int len,int start);
 int ignoreSpace(char* cmd, int start);
 void printCurrDirName(int currDirIdx);
@@ -12,14 +12,17 @@ void ls(int* currDirIdx);
 void cat(char* param,int* currDirIdx);
 void ln(char* param,int currDirIdx);
 void help();
-
+void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3);
 void consdot(char* dest, char* add);
 char* append(char* first, char* last);
 
 void shell(){
-    char cmd[180];
+    char cmd[180],cmd1[180],cmd2[180],cmd3[180];
     int* currDirIdx;  // directory sekarang
-
+    int i;
+    cmd1[0] = 0x00;
+    cmd2[0] = 0x00;
+    cmd3[0] = 0x00;
     // Inisialisasi
     printString("Executing Shell...\n");
     *currDirIdx = 0xFF;    //inisialisasi sebagai root;
@@ -27,14 +30,21 @@ void shell(){
         printCurrDirName(*currDirIdx);
         printString(" $ ");
         readString(cmd);
-        executecmd(cmd,currDirIdx);
-
+        executecmd(cmd,cmd1,cmd2,cmd3,currDirIdx);
+        i = 0;
+        i = ignoreSpace(cmd,i);
+        if(!modifiedstrcmp(cmd,"prev",4,i)){
+            strcpy(cmd3,cmd2);
+            strcpy(cmd2,cmd1);
+            strcpy(cmd1,cmd);    
+        }
     }
 
 }
 
-void executecmd(char* cmd, int* currDirIdx){
+void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     int cmdIndex = 0;
+    int tempcurrDirIdx = *currDirIdx;
     cmdIndex = ignoreSpace(cmd,cmdIndex);
     if(modifiedstrcmp(cmd,"cd",2,cmdIndex)){
         cmdIndex += 2;
@@ -44,21 +54,31 @@ void executecmd(char* cmd, int* currDirIdx){
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
         ls(currDirIdx);
+        *currDirIdx = tempcurrDirIdx;
     }else if(modifiedstrcmp(cmd,"cat",3,cmdIndex)){
         cmdIndex += 3;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
         cat(&cmd[cmdIndex],currDirIdx);
+        *currDirIdx = tempcurrDirIdx;
     }else if (modifiedstrcmp(cmd,"ln",2,cmdIndex)){
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
         ln(&cmd[cmdIndex],*currDirIdx);
+        *currDirIdx = tempcurrDirIdx;
     }else if(modifiedstrcmp(cmd,"help",4,cmdIndex)){
-    	cmdIndex += 2;	
+    	cmdIndex += 4;	
     	cmdIndex = ignoreSpace(cmd,cmdIndex);
-	help();
-    }else{
-        cmdIndex = ignoreSpace(cmd,cmdIndex);
-        printString("invalid command\n");
+	    help();
+        *currDirIdx = tempcurrDirIdx;
+    }else if(modifiedstrcmp(cmd,"prev",4,cmdIndex)){
+    	cmdIndex += 4;	
+    	cmdIndex = ignoreSpace(cmd,cmdIndex);
+	    prev(&cmd[cmdIndex],currDirIdx,cmd1,cmd2,cmd3);
+    }else {
+        //cmdIndex = ignoreSpace(cmd,cmdIndex);
+        printString("'");
+        printString(cmd);
+        printString("' is not recognized, type 'help' to list all valid command \n");
     }
 
 }
@@ -120,10 +140,6 @@ void cd(char* param,int* currDirIdx) {
     int* foundIdx;
     bool found;
     int i,j;
-
-    printString("calling cd with parar : ");
-    printString(param);
-    printString("\n");
 
     readSector(files, 0x101);
     readSector(files+512, 0x102);
@@ -230,9 +246,10 @@ void cat(char* param, int* currDirIdx)  {
 
     tmp = *currDirIdx;
     readFile(buffer, param, &result, *currDirIdx);
+    // printString("done reading file\n");
     if (result == -1) {
         *currDirIdx = tmp;
-        //printString("ERROR : File tidak ditemukan\n");
+        printString("ERROR : File tidak ditemukan\n");
         return;
     }else{
         *currDirIdx = tmp;
@@ -252,6 +269,7 @@ void ln(char* param,int currDirIdx){
     char files[1024];
     char* pathSource;
     char* pathTarget;
+    int temp;
     char currParentIdx;
     char parentIndex;
     int sectNum, sectPos, sectIdx, fileSourceIdx;
@@ -283,17 +301,19 @@ void ln(char* param,int currDirIdx){
         j++;
     }
     if(soft){
-        printString("soft linking\n");
+        //printString("soft linking\n");
     }else{
-        printString("hard linking\n");
+        //printString("hard linking\n");
     }
+    /*
     printString("src file = ");
     printString(sourceFileName);
     printString("\ntarget file = ");
     printString(targetFileName);
     printString("\n");
+    */
     if(strlen(targetFileName) == 0 || strlen(sourceFileName) == 0){
-        printString("Terminationg\n");
+        printString("ERROR : fileName not valid\n");
         return;
     }
 
@@ -343,13 +363,16 @@ void ln(char* param,int currDirIdx){
                 return;
             } else {
                 // Cek apakah sudah tersedia folder yang sama
+                temp = currParentIdx;
                 found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+                
                 if (found) {
-                    printString("Folder sudah ada\n");
+                    //printString("Folder sudah ada\n");
                     currParentIdx = *foundIdx;
                     // printString(currParentIdx);
                 } else {
-                    printString("Folder tidak ditemukan\n");
+                    printString("ERROR : Folder tidak ditemukan\n");
+                    currParentIdx = temp;
                     //*result = -1;
                     return;
                 }
@@ -366,7 +389,7 @@ void ln(char* param,int currDirIdx){
     
     // Cek apakah nama file valid (tidak boleh kosong)
     if (strcmp(currFlName,"")) {
-        printString("Nama file tidak valid\n");
+        printString("ERROR : Nama file tidak valid\n");
         //*result = -5;
         return;
     }
@@ -374,13 +397,16 @@ void ln(char* param,int currDirIdx){
     // 3. Cek file ada
     //printString("\ncurrFlName = ");
     //printString(currFlName);
+    temp = currParentIdx;
+    //found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
     found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
     if (!found) {
-        printString("File tidak ditemukan\n");
+        printString("ERROR : File tidak ditemukan\n");
+        currParentIdx = temp;
         return;
     }
 
-    printString("File ditemukan\n");
+//    printString("File ditemukan\n");
     fileSourceIdx = *foundIdx;
 
     //yang dibawah sekarang copy dari write file
@@ -393,7 +419,7 @@ void ln(char* param,int currDirIdx){
     }
 
     if (!found) {
-        printString("Folder tidak valid\n");
+        printString("ERROR : Folder tidak valid\n");
         //*sectors = -4;
         return;
     }
@@ -437,17 +463,19 @@ void ln(char* param,int currDirIdx){
                 return;
             } else {
                 // Cek apakah sudah tersedia folder yang sama
+                temp = currParentIdx;
                 found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
                 if (found) {
-                    printString("Folder sudah ada\n");
+                    //printString("Folder sudah ada\n");
                     currParentIdx = *foundIdx;
                     // printString(currParentIdx);
                 } else {
                     // cari files yang kosong
                     filesIdx = foundEmptyDir(files);
                     if (filesIdx == -1) {
-                        printString("Tidak cukup entri di files\n");
+                        printString("ERROR : Tidak cukup entri di files\n");
                         //*sectors = -2;
+                        currParentIdx = temp;
                         return;
                     }
 
@@ -472,7 +500,7 @@ void ln(char* param,int currDirIdx){
     
     
     if (strcmp(currFlName,"")) {
-        printString("Nama file tidak valid\n");
+        printString("ERROR : Nama file tidak valid\n");
         //*sectors = -5;
         return;
     }
@@ -480,14 +508,14 @@ void ln(char* param,int currDirIdx){
     // 3b. Cek apakah sudah file udah ada
     found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
     if (found) {
-        printString("File sudah ada\n");
+        printString("ERROR : File sudah ada\n");
         //*sectors = -1;
         return;
     }
     // cari files yang kosong
     filesIdx = foundEmptyDir(files);
     if (filesIdx == -1) {
-        printString("Tidak cukup entri di files\n");
+        printString("ERROR : Tidak cukup entri di files\n");
         //*sectors = -2;
         return;
     }
@@ -558,9 +586,33 @@ char* append(char* first, char* last){
 }
 
 void help(){
-	printString("help  listing all possible commands");
-	printString("cd    changes the current directory");
-	printString("ls    lists all files in the current directory");
-	printString("cat   view contain of given file");
-	printString("ln    create a hard link or a symbolic link to an existing file or directory");
+	printString("help  listing all possible commands\n");
+	printString("cd    changes the current directory\n");
+	printString("ls    lists all files in the current directory\n");
+	printString("cat   view contain of given file\n");
+	printString("ln    create a hard link or a symbolic link to an existing file or directory\n");
+    printString("prev  execute previous command (up to 3 command)\n"); 
 }
+
+void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3){
+    int i = 0;
+    if(cmd[i] == '1'){
+        printString("\nexecuting ");
+        printString(cmd1);
+        printString("\n");
+        executecmd(cmd1,cmd1,cmd2,cmd3,currDirIdx);
+    }else if(cmd[i] == '2'){
+        printString("\nexecuting ");
+        printString(cmd2);
+        printString("\n");
+        executecmd(cmd2,cmd1,cmd2,cmd3,currDirIdx);
+    }else if(cmd[i] == '3'){
+        printString("\nexecuting ");
+        printString(cmd3);
+        printString("\n");
+        executecmd(cmd3,cmd1,cmd2,cmd3,currDirIdx);
+    }else{
+        printString("command out of bound\n");
+    }
+}
+

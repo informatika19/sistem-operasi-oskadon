@@ -53,7 +53,7 @@ int mod(int dividend, int divisor);
 int div(int numerator, int denominator);    
 int strlen(char* buff);
 int strcmp(char* a, char* b);
-int strcpy(char* dest, char* src);
+void strcpy(char* dest, char* src);
 //int delFirstDigit(int num);
 // Fungsi Graphic dan Hiasan
 int modeScreen(int mode);
@@ -295,7 +295,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     char buffSec[512];
     char buffName[15];
     char currFlName[128];
-    char currParentIdx;
+    char currParentIdx,temp;
     int *foundIdx;
     
     // printString("t1\n");
@@ -358,7 +358,9 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
                 return;
             } else {
                 // Cek apakah sudah tersedia folder yang sama
+                temp = currParentIdx;
                 found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+                currParentIdx = temp;
                 if (found) {
                     printString("Folder sudah ada\n");
                     currParentIdx = *foundIdx;
@@ -464,7 +466,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
 void readFile(char *buffer, char *path, int *result, char parentIndex) {
     char files[1024], maps[512];
     int sectNum, sectPos, sectIdx, fileIdx;
-    char currParentIdx;
+    char currParentIdx,temp;
     char currFlName[128];
     bool found;
     int* foundIdx;
@@ -486,13 +488,14 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
     }
 
     // 2. Cari path sampe ketemu bagian file
+    // printString(path);
+    // printString("\n");
     while (path[i] != '\0') {
         currFlName[j] = path[i];
-        
-        if (currFlName[j] == '/') {
-            
-            currFlName[j] = '\0';
 
+        if (currFlName[j] == '/') {
+
+            currFlName[j] = '\0';
             if (strcmp(currFlName,".")) 
             {
                 // Do Nothing, di curr dir yang sama
@@ -512,9 +515,11 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
                 return;
             } else {
                 // Cek apakah sudah tersedia folder yang sama
+                temp = currParentIdx;
                 found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+                currParentIdx = temp;
                 if (found) {
-                    printString("Folder sudah ada\n");
+                    // printString("Folder sudah ada\n");
                     currParentIdx = *foundIdx;
                     // printString(currParentIdx);
                 } else {
@@ -531,7 +536,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
         
     }
     currFlName[j] = path[i];
-
+    //printString(currFlName);
     // while (path[i] != '\0') {
     //     currFlName[j] = path[i];
     //     if (currFlName[j] == '/') {
@@ -763,12 +768,14 @@ int strcmp(char* a, char* b){
     }
     return 1;
 }
-int strcpy(char* dest, char* src){
+void strcpy(char* dest, char* src){
     int i = 0;
-    clear(dest,strlen(dest));
+    //clear(dest,strlen(dest));
     for(i;i<strlen(src);i++){
         dest[i] = src[i];
     }
+    src[i] = 0x00;
+    dest[i] = 0x00;
 }
 // Menggambar image di mode13, error jangan digunakan
 void drawSomething() {
