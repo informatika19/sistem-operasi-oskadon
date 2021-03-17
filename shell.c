@@ -34,6 +34,7 @@ void shell(){
 
 void executecmd(char* cmd, int* currDirIdx){
     int cmdIndex = 0;
+    cmdIndex = ignoreSpace(cmd,cmdIndex);
     if(modifiedstrcmp(cmd,"cd",2,cmdIndex)){
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
