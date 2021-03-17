@@ -11,6 +11,7 @@ void cd(char* param,int* currDirIdx);
 void ls(int* currDirIdx);
 void cat(char* param,int* currDirIdx);
 void ln(char* param,int currDirIdx);
+void help();
 
 void consdot(char* dest, char* add);
 char* append(char* first, char* last);
@@ -51,6 +52,10 @@ void executecmd(char* cmd, int* currDirIdx){
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
         ln(&cmd[cmdIndex],*currDirIdx);
+    }else if(modifiedstrcmp(cmd,"help",4,cmdIndex)){
+    	cmdIndex += 2;	
+    	cmdIndex = ignoreSpace(cmd,cmdIndex);
+	help();
     }else{
         cmdIndex = ignoreSpace(cmd,cmdIndex);
         printString("invalid command\n");
@@ -550,4 +555,12 @@ char* append(char* first, char* last){
     }
     result[i+j] = '\0';
     return result;
+}
+
+void help(){
+	printString("help  listing all possible commands");
+	printString("cd    changes the current directory");
+	printString("ls    lists all files in the current directory");
+	printString("cat   view contain of given file");
+	printString("ln    create a hard link or a symbolic link to an existing file or directory");
 }
