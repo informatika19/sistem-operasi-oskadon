@@ -165,8 +165,8 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
 
     // 6. Cari Sektor di Map yang kosong (sudah ketemu)
     // 7. Tulis Semua Buffer
-    // secNum = 32+secIdx*16    
-    // 32 sector kernel, secIdx*16 karena setiap file ada 16 sector + i
+    // secNum = 16+secIdx*16    
+    // 16 sector kernel, secIdx*16 karena setiap file ada 16 sector + i
     // Implementasi panjang buffer
     countSec = div(strlen(buffer)-1,512) + 1;
     for (i = 0; i < countSec; i++) {
