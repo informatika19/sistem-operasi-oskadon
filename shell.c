@@ -223,11 +223,21 @@ void ls(int* currDirIdx) {
     // print dir
     i = 0;
     while (i < 32) {
-        if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
-            printString(dir+(i * 16 + 1));
+        if (dir[i * 16] == parentIdx) {
+            if (dir+(i * 16 + 1) == 0xFF) {
+                printString("*");
+            } else {
+                printString(" ");
+            }
+            
+            printString(dir+(i * 16 + 2));
             printString("\n\r");
         }
-        i += 1;
+        // if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
+        //     printString(dir+(i * 16 + 2));
+        //     printString("\n\r");
+        // }
+        // i += 1;
     }
 
     // print file
