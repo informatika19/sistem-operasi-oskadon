@@ -1,7 +1,7 @@
 #ifndef _FILE_IO_H_
 #define _FILE_IO_H_
 
-#include "../type/boolean.h"
+#include "boolean.h"
 
 /** Menulis file dari buffer ke dalam sector yang kosong */
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex);

@@ -1,6 +1,9 @@
-#define bool unsigned char
-#define true 1
-#define false 0
+#include "module/boolean.h"
+#include "module/fileIO.h"
+#include "module/folderIO.h"
+#include "module/math.h"
+#include "module/text.h"
+#include "module/sector.h"
 
 void shell();
 void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3,int* currDirIdx);

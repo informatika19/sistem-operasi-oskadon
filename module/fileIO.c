@@ -1,6 +1,6 @@
 #include "fileIO.h"
-#include "../sector/sector.h"
-#include "../teks/string.h"
+#include "sector.h"
+#include "string.h"
 
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     // path jadi nama file dan folder

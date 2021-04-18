@@ -1,5 +1,5 @@
 #include "folderIO.h"
-#include "../type/boolean.h"
+#include "boolean.h"
 
 
 void createFolder(char *path, int *result, char parentIndex){

@@ -6,6 +6,6 @@ int strcmp(char* a, char* b);
 void strcpy(char* dest, char* src);
 void clear(char* buffer, int length);
 void printString(char* string);
-void readString(char* string);
+// void readString(char* string);
 
 #endif

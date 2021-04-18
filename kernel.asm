@@ -84,7 +84,6 @@ _interrupt21ServiceRoutine:
 	iret
 
 
-; _imageFile:
-; 	incbin "image.bin"       ;include the raw image binary into the kernel
+
 
 
