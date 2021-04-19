@@ -1,631 +1,590 @@
-#include "module/boolean.h"
-#include "module/fileIO.h"
-#include "module/folderIO.h"
-#include "module/math.h"
-#include "module/text.h"
-#include "module/sector.h"
+int resolvePath(int from, char *path);
+void inputWithComplete(char *string);
+void ls(char parentIndex);
+void cd(char *fileName);
+void mkdir(char* folderName);
+void ln(char parentIndex, char* fileName1, char* fileName2);
+int strcmp(char* strA, char* strB);
+int strcmpn(char* strA, char* strB, int n);
+void initHistory();
+void updateHistory(char* input);
 
-void shell();
-void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3,int* currDirIdx);
-int modifiedstrcmp(char* a, char* b, int len,int start);
-int ignoreSpace(char* cmd, int start);
-void printCurrDirName(int currDirIdx);
-void cd(char* param,int* currDirIdx);
-void ls(int* currDirIdx);
-void cat(char* param,int* currDirIdx);
-void ln(char* param,int currDirIdx);
-void help();
-void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3);
-void consdot(char* dest, char* add);
-char* append(char* first, char* last);
+int curdir, dirBack, dirChange, itrDirName;
+char curDirName[128], directoryBuffer[1024], history[3][64];
+curdir = 0xFF;
 
-void shell(){
-    char cmd[180],cmd1[180],cmd2[180],cmd3[180];
-    int* currDirIdx;  // directory sekarang
-    int i;
-    cmd1[0] = 0x00;
-    cmd2[0] = 0x00;
-    cmd3[0] = 0x00;
-    // Inisialisasi
-    printString("Executing Shell...\n");
-    *currDirIdx = 0xFF;    //inisialisasi sebagai root;
+int main(){
+    char arg1[14], arg2[14], directoryPath[512], directoryDestination[14], fileContent[512*16];
+	char* input;
+	int i, j, k, success, isSuccess, isSuccess2; 
+    // int isSuccess;
+	curdir = 0xFF;
+	itrDirName = 0;
+	dirChange = 0;
+	dirBack = 0;
+	
+    // Initialize current directory name 
+    i = 0;
+    while(i<512){
+        if(i<128){
+            curDirName[i] = '\0';
+        }
+        directoryPath[i] = 0x00;
+        i++;
+    }
+    // Load files sector at 0x101 and 0x102
+    interrupt(0x21, 0x2, directoryBuffer, 0x101, 0);
+    interrupt(0x21, 0x2, directoryBuffer+512, 0x102, 0);
+    initHistory();
+	i = 0;
     while(1){
-        printCurrDirName(*currDirIdx);
-        printString(" $ ");
-        readString(cmd);
-        executecmd(cmd,cmd1,cmd2,cmd3,currDirIdx);
-        i = 0;
-        i = ignoreSpace(cmd,i);
-        if(!modifiedstrcmp(cmd,"prev",4,i)){
-            strcpy(cmd3,cmd2);
-            strcpy(cmd2,cmd1);
-            strcpy(cmd1,cmd);    
+        do{
+            // output Root to shell
+            interrupt(0x21, 0x00, "shell@wetheclown", 0, 0);
+
+            // Load current directory name next to "Root"
+            interrupt(0x21, 0x00, curDirName, 0, 0);
+			interrupt(0x21, 0x00, ">", 0, 0);
+            // Ask for input from user on shell
+			//interrupt(0x21, 0x01, input, 1, 0);
+            inputWithComplete(input);
+        } while(strcmp(input, ""));
+        
+        updateHistory(input);
+        interrupt(0x21, 0x00, "\r\n", 0, 0);
+
+        // List of Command
+        if(strcmp(input, "ls\r\n")){
+            ls(curdir);
+        } else if(strcmpn(input, "ls ",3)){
+            int parentIndex = resolvePath(curdir, input+3);
+            if(parentIndex<0){
+                interrupt(0x21, 0x00, "File atau Direktori tidak ditemukan\r\n", 0, 0);
+            }else{
+                ls(parentIndex);
+            }
+        }else if(strcmpn(input, "cat ",4)) {
+            i = 4;
+            while (i < 18) {
+                if (input[i] == '\0' || input[i] == '\r') {
+                    break;
+                }else{
+                    // Mengambil argument sebenarnya dari cat
+                    arg1[i - 4] = input[i];
+                } 
+                i++;
+            }
+            // Mengosongkan argumen bagian paling belakang apabila panjang argumen cat tidak sampai 15
+            while (i < 18) {
+                arg1[i-4] = '\0';
+                i++;
+            }
+            directoryPath[0] = curdir;
+            for (i = 0; i < 14; i++) {
+                directoryPath[i+1] = arg1[i];
+            }
+            // Read sector and fill to directory path
+            //interrupt(0x21, 0x03, directoryPath, 512, 0);
+            //interrupt(0x21, 0x06, "cat", 0x2000, &success);
+            // Gatau mau ngapain ? :)
+            for (i = 0; i < 512*16; i++) {
+		        fileContent[i] = 0x0;
+	        }
+            interrupt(0x21, 0x04 + curdir*256, fileContent, arg1, &isSuccess);
+            
+            if (isSuccess==1){
+                interrupt(0x21, 0x00, fileContent, 0, 0);
+                interrupt(0x21, 0x00, "\r\n\0", 0, 0);
+            } else if(isSuccess==-1) {
+                interrupt(0x21, 0x00, "File tidak ditemukan dalam direktori ini\r\n\0", 0, 0);
+            }
+            
+            // Load ulang files sector at 0x101 and 0x102
+            interrupt(0x21, 0x2, directoryBuffer, 0x101, 0);
+            interrupt(0x21, 0x2, directoryBuffer+512, 0x102, 0);
+        } else if(strcmpn(input, "cd ", 3)){
+            cd(input+3);
+        } else if(strcmpn(input, "mkdir ", 6)){
+            mkdir(input+6);
+            interrupt(0x21, 0x3, directoryBuffer, 0x101, 0);
+            interrupt(0x21, 0x3, directoryBuffer+512, 0x102, 0);
+        } else if(strcmpn(input, "ln ", 3)){
+            // Kosongkan arg1 dan arg2 untuk diisi nama file
+            for(i=0; i<14; i++){
+                arg1[i] = '\0';
+                arg2[i] = '\0';
+            }
+            i = 3; // iterator input
+            j = 0; // panjang nama file pertama
+            while(i<17){
+                if (input[i] == '\0' || input[i]==' ') {
+                    break;            isSuccess = 0;
+            isSuccess2 = 0;
+                }else{
+                    // Mengambil nama file pertama
+                    arg1[i-3] = input[i];
+                } 
+                i++;
+                j++;
+            }
+            i++; // asumsi pasti ada spasi diantara nama file pertama dan kedua
+            while(i<32){
+                if (input[i] == '\0' || input[i] == '\r') {
+                    break;
+                }else{
+                    // Mengambil nama file kedua
+                    arg2[i-j-4] = input[i];
+                } 
+                i++;
+            }
+            ln(curdir, arg1, arg2);
+        } else {    
+            interrupt(0x21, 0x00, "Command ini tidak tersedia\r\n\0", 0, 0);
         }
     }
 
+    return 0;
 }
 
-void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
-    int cmdIndex = 0;
-    int tempcurrDirIdx = *currDirIdx;
-    cmdIndex = ignoreSpace(cmd,cmdIndex);
-    if(modifiedstrcmp(cmd,"cd",2,cmdIndex)){
-        cmdIndex += 2;
-        cmdIndex = ignoreSpace(cmd,cmdIndex);
-        cd(&cmd[cmdIndex],currDirIdx);
-    }else if(modifiedstrcmp(cmd,"ls",2,cmdIndex)){
-        cmdIndex += 2;
-        cmdIndex = ignoreSpace(cmd,cmdIndex);
-        ls(currDirIdx);
-        *currDirIdx = tempcurrDirIdx;
-    }else if(modifiedstrcmp(cmd,"cat",3,cmdIndex)){
-        cmdIndex += 3;
-        cmdIndex = ignoreSpace(cmd,cmdIndex);
-        cat(&cmd[cmdIndex],currDirIdx);
-        *currDirIdx = tempcurrDirIdx;
-    }else if (modifiedstrcmp(cmd,"ln",2,cmdIndex)){
-        cmdIndex += 2;
-        cmdIndex = ignoreSpace(cmd,cmdIndex);
-        ln(&cmd[cmdIndex],*currDirIdx);
-        *currDirIdx = tempcurrDirIdx;
-    }else if(modifiedstrcmp(cmd,"help",4,cmdIndex)){
-    	cmdIndex += 4;	
-    	cmdIndex = ignoreSpace(cmd,cmdIndex);
-	    help();
-        *currDirIdx = tempcurrDirIdx;
-    }else if(modifiedstrcmp(cmd,"prev",4,cmdIndex)){
-    	cmdIndex += 4;	
-    	cmdIndex = ignoreSpace(cmd,cmdIndex);
-	    prev(&cmd[cmdIndex],currDirIdx,cmd1,cmd2,cmd3);
-    }else {
-        //cmdIndex = ignoreSpace(cmd,cmdIndex);
-        printString("'");
-        printString(cmd);
-        printString("' is not recognized, type 'help' to list all valid command \n");
-    }
-
-}
-
-int modifiedstrcmp(char* a, char* b, int len,int start){ //compare untuk beberapa char pertama aja dimulai dari index sesuati *buat shell
-    int i;
-    i = 0;
-    while(i < len){
-        if(a[start + i] != b[i]){
-            return 0;
-        }
-        i++;
-    }
-    return 1;
-}
-
-int ignoreSpace(char* cmd, int start){ //return new index
-    while(cmd[start] == ' '){
-        start++;
-    }
-    return start;
-}
-
-void printCurrDirName(int currDirIdx) {
-    char files[1024];
-    int filesIdx;
-    int i;
-    char buffName[256];
-    char currFlName[15];
-
-    buffName[0] = '\0';
-    readSector(files, 0x101);
-    readSector(files+512, 0x102);  
-
-    filesIdx = currDirIdx;
-    
-
-    if (filesIdx == 0xFF) { // udah root
-        printString("/root");
-        return;
-    } else {
-        getFlName(files,filesIdx,currFlName);
-        filesIdx = files[filesIdx*16];
-        printCurrDirName(filesIdx);
-
-        printString("/");
-        printString(currFlName);
-
-    }
-
-}
-
-
-void cd(char* param,int* currDirIdx) {
-    // KAMUS
-    char files[1024];
-    char currFlName[128];
-    int temp;
-    int* foundIdx;
-    bool found;
+void initHistory(){
     int i,j;
-
-    readSector(files, 0x101);
-    readSector(files+512, 0x102);
-
-    
-    i = 0;
-    j = 0;
-    if (param[i] == '/') {   // dari root
-        *currDirIdx = 0xFF;
-        i++;  
-    }
-    
-    while (i <= strlen(param))
-    {
-        currFlName[j] = param[i];
-
-        if (currFlName[j] == '/' || currFlName[j] == '\0') {
-            currFlName[j] = '\0';
-            
-            // Cek apakah nama folder valid (tidak boleh kosong)
-            if (strcmp(currFlName,".")) 
-            {
-                // Do Nothing, di curr dir yang sama
-            } 
-            else if (strcmp(currFlName,"..")) 
-            {   // Back to parent
-                if (*currDirIdx != 0xFF) {    // Bukan di root
-                    // Cari parent folder ini
-                    *currDirIdx = files[(*currDirIdx)*16];
-                }
-                // kalau di root do nothing aja
-            } 
-            else if (strcmp(currFlName,"")) 
-            {
-                printString("Error: Nama folder tidak valid\n");
-                return;
-            } 
-            else    // default, sebuah nama folder
-            {      
-                temp = *currDirIdx;
-                found = isFlExist(files,*currDirIdx,currFlName,true,foundIdx);
-                
-                if (!found) { // folder tidak ada
-                    *currDirIdx = temp;
-                    printString("Error: Folder tidak ditemukan\n");
-                    return;
-                } else {
-                    // ditemukan
-                    *currDirIdx = *foundIdx;
-                }
-            }
-            j = 0;
-        } else {
-            j++;
+    for(i=0; i<3; i++){
+        for(j=0; j<64; j++){
+            history[i][j] = 0;
         }
-
-        i++;        
-    }
-
-
-    // printString("Cd berhasil");
-
-
-}
-
-void ls(int* currDirIdx) {
-    char dir[512];
-    char file[512];
-    int i;
-    int parentIdx;
-
-    parentIdx = *currDirIdx;
-
-    // read dir & file
-    readSector(dir, 0x101);
-    readSector(file, 0x102);
-
-    // print dir
-    i = 0;
-    while (i < 32) {
-        if (dir[i * 16] == parentIdx) {
-            if (dir+(i * 16 + 1) == 0xFF) {
-                printString("*");
-            } else {
-                printString(" ");
-            }
-            
-            printString(dir+(i * 16 + 2));
-            printString("\n\r");
-        }
-        // if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
-        //     printString(dir+(i * 16 + 2));
-        //     printString("\n\r");
-        // }
-        // i += 1;
-    }
-
-    // print file
-    i = 0;
-    while (i < 32) {
-        if (file[i * 16] == parentIdx && file[i * 16 + 1] != '\0') {
-            printString(file+(i * 16 + 1));
-            printString("\n\r");
-        }
-        i += 1;
     }
 }
-
-void cat(char* param, int* currDirIdx)  {
-    char buffer[1024];
-    int result;
-    int tmp;
-    result = 1;
-
-    tmp = *currDirIdx;
-    readFile(buffer, param, &result, *currDirIdx);
-    // printString("done reading file\n");
-    if (result == -1) {
-        *currDirIdx = tmp;
-        printString("ERROR : File tidak ditemukan\n");
-        return;
-    }else{
-        *currDirIdx = tmp;
-        printString(buffer);
-        printString("\n");
-    }
-    
-}
-// ln [-fs] [-L|-P] source_file target_file
-// example : ln test4.txt text6.txt made new file text6.txt that linked with test4.txt
-void ln(char* param,int currDirIdx){
+void updateHistory(char* input){
     int i,j;
-    char sourceFileName[180];
-    char targetFileName[180];
-    char currFlName[128];
-    char maps[512];
-    char files[1024];
-    char* pathSource;
-    char* pathTarget;
-    int temp;
-    char currParentIdx;
-    char parentIndex;
-    int sectNum, sectPos, sectIdx, fileSourceIdx;
-    int found;
-    int* foundIdx;
-    int dirNum,dirIdx;
-    int sectorSourcefileIdx;
-    int soft = 0;
-    int z = 0;
-    int filesNum,filesIdx;
-    sourceFileName[0] = '\0';
-    targetFileName[0] = '\0';
-    if(modifiedstrcmp(param,"-s",2,0)){
-        z = 2;
-        soft = 1;
-        z = ignoreSpace(param,z);
-        param = &(param[z]);  
+    for(i=2; i>0; i--){
+        for(j=0; j<64; j++){
+            history[i][j] = history[i-1][j];
+        }
     }
-    parentIndex  = currDirIdx;
-    i = 0;
-    while(param[i] != ' '|| param[i+j] == 0x0){
-        sourceFileName[i] = param[i];
-        i++;
+    for(j=0; j<64; j++){
+        history[0][j] = 0;
     }
-    i = ignoreSpace(param,i);
-    j = 0;
-    while(!(param[i+j] == 0x20 || param[i+j] == 0x0)){
-        targetFileName[j] = param[i+j];
-        j++;
+    for(j=0; input[j]!='\r'; j++){
+        history[0][j] = input[j];
     }
-    if(soft){
-        //printString("soft linking\n");
-    }else{
-        //printString("hard linking\n");
-    }
-    /*
-    printString("src file = ");
-    printString(sourceFileName);
-    printString("\ntarget file = ");
-    printString(targetFileName);
-    printString("\n");
-    */
-    if(strlen(targetFileName) == 0 || strlen(sourceFileName) == 0){
-        printString("ERROR : fileName not valid\n");
-        return;
-    }
+}
 
-    pathSource = sourceFileName; // pathSource = ./folder/file ; currDirIdx = 0xFF
-    pathTarget = targetFileName;
-    //below is from readFile from kernel.c
+int resolvePath(int from, char *path){
+    //Mengembalikan id file/folder yang diperoleh melalui path dari id from
+    //Mengembalikan -1 jika tidak ada
+    int id, found, len;
+    found = -1;
+    for(len=0; path[len]!='/' && path[len]!='\r'; len++){}
     
-    // 0. inisialisasi
-    //readSector(maps, 0x100);
-    readSector(files, 0x101);
-    readSector(files + 512, 0x102);
-
-    // 1. cari folder dan file
-    i = 0;
-    j = 0;
-    if (pathSource[i] == '/') {   // dari root
-        currParentIdx = 0xFF;
-        i++;  
-    } else {
-        currParentIdx = parentIndex;
-    }
-
-    // 2. Cari path sampe ketemu bagian file
-    while (pathSource[i] != '\0') {
-        currFlName[j] = pathSource[i];
-        
-        if (currFlName[j] == '/') {
-            
-            currFlName[j] = '\0';
-
-            if (strcmp(currFlName,".")) 
-            {
-                // Do Nothing, di curr dir yang sama
-            } 
-            else if (strcmp(currFlName,"..")) 
-            {   // Back to parent
-                if (currParentIdx != 0xFF) {    // Bukan di root
-                    // Cari parent folder ini
-                    currParentIdx = files[(currParentIdx)*16];
-                }
-                // kalau di root do nothing aja
-            } 
-            else if (strcmp(currFlName,"")) 
-            {
-                printString("Error: Nama folder tidak valid\n");
-                 //*result = -5;
-                return;
-            } else {
-                // Cek apakah sudah tersedia folder yang sama
-                temp = currParentIdx;
-                found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-                
-                if (found) {
-                    //printString("Folder sudah ada\n");
-                    currParentIdx = *foundIdx;
-                    // printString(currParentIdx);
-                } else {
-                    printString("ERROR : Folder tidak ditemukan\n");
-                    currParentIdx = temp;
-                    //*result = -1;
-                    return;
+    // Mencari folder/file yang namanya sesuai
+    for(id=0; id<64; id++){
+        if(directoryBuffer[id*16] == from){
+            if(stringLength(directoryBuffer + (id*16 + 2), 14) == len){
+                if(strcmpn(directoryBuffer + (id*16 + 2), path, len)){
+                    found = id;
                 }
             }
-            j = 0;  
-        } else {
-            j++;
         }
-        i++;
-        
     }
-    currFlName[j] = pathSource[i];
-
-    
-    // Cek apakah nama file valid (tidak boleh kosong)
-    if (strcmp(currFlName,"")) {
-        printString("ERROR : Nama file tidak valid\n");
-        //*result = -5;
-        return;
+    // Mengecek apakah . atau ..
+    if(len==2 && path[0] == '.' && path[1] == '.'){
+        found = directoryBuffer[from*16];
+    }else if(len==1 && path[0] == '.'){
+        found = from;
     }
-
-    // 3. Cek file ada
-    //printString("\ncurrFlName = ");
-    //printString(currFlName);
-    temp = currParentIdx;
-    //found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-    found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
-    if (!found) {
-        printString("ERROR : File tidak ditemukan\n");
-        currParentIdx = temp;
-        return;
+    if(found<0){
+        return -1;
+    }else if(path[len]=='\r'){
+        return found;
+    //path[len] pasti bernilai '/', hanya perlu mengecek apakah folder/file
+    }else if(directoryBuffer[id*16+1]==0xFF){
+        return resolvePath(found, path + len);
+    }else{
+        return -1;
     }
+}
 
-//    printString("File ditemukan\n");
-    fileSourceIdx = *foundIdx;
 
-    //yang dibawah sekarang copy dari write file
-    // 2. Cek parrent folder valid
-    found = false;
-    if (parentIndex == 0xFF) { // folder di root
-        found = true;
-    } else if (files[16*parentIndex+1] == 0xFF) { // sebuah folder
-        found = true;
-    }
-
-    if (!found) {
-        printString("ERROR : Folder tidak valid\n");
-        //*sectors = -4;
-        return;
-    }
-    
-
-    // 3. Atur bagian path
-    // 3a. Buat folder
-    i = 0;
-    j = 0;
-    if (pathTarget[i] == '/') {   // dari root
-        currParentIdx = 0xFF;
-        i++;  
-    } else {
-        currParentIdx = parentIndex;
-    }
-
-    
-    while (pathTarget[i] != '\0') {
-        currFlName[j] = pathTarget[i];
-        
-        if (currFlName[j] == '/') {
-            
-            currFlName[j] = '\0';
-
-            if (strcmp(currFlName,".")) 
-            {
-                // Do Nothing, di curr dir yang sama
-            } 
-            else if (strcmp(currFlName,"..")) 
-            {   // Back to parent
-                if (currParentIdx != 0xFF) {    // Bukan di root
-                    // Cari parent folder ini
-                    currParentIdx = files[(currParentIdx)*16];
+void inputWithComplete(char *string){
+    // initialize variable
+    int i = 0; //string's length
+    int j = 0; //input position
+    int k = 0; //for loop index
+    int idx, nxt, found, len, hist;
+    char c = '\0';
+    idx = 0;
+    hist = -1;
+    while(1){
+        // Wait for keypress and read character from keypress/keyboard
+        c = interrupt(0x16, 0, 0, 0, 0);
+        // Display input from keyboard
+        if(c == '{' || c == '}'){
+            if(c=='{' && hist<2){hist++;}
+            if(c=='}' && hist>0){hist--;}
+            while(j>0){
+                interrupt(0x10, 0xE*256+8,0,0,0);
+                j--;
+            }
+            for(k=0; k<i; k++){
+                interrupt(0x10, 0xE*256+' ',0,0,0);
+            }
+            for(k=0; k<i; k++){
+                interrupt(0x10, 0xE*256+8,0,0,0);
+                string[k] = 0;
+            }
+            i=0;
+            while(history[hist][i] != 0){
+                interrupt(0x10, 0xE*256+history[hist][i],0,0,0);
+                string[i] = history[hist][i];
+                i++;
+                j++;
+            }
+        }else if(i>=3 && string[0]=='c' && string[1]=='d' && string[2] == ' ' && c==','){
+            nxt = idx;
+            found = 0;
+            do{
+                nxt++;
+                if(nxt==64){
+                    nxt=0;
                 }
-                // kalau di root do nothing aja
-            } 
-            else if (strcmp(currFlName,"")) 
-            {
-                printString("Error: Nama folder tidak valid\n");
-                 //*sectors = -5;
-                return;
-            } else {
-                // Cek apakah sudah tersedia folder yang sama
-                temp = currParentIdx;
-                found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-                if (found) {
-                    //printString("Folder sudah ada\n");
-                    currParentIdx = *foundIdx;
-                    // printString(currParentIdx);
-                } else {
-                    // cari files yang kosong
-                    filesIdx = foundEmptyDir(files);
-                    if (filesIdx == -1) {
-                        printString("ERROR : Tidak cukup entri di files\n");
-                        //*sectors = -2;
-                        currParentIdx = temp;
-                        return;
+                found = (directoryBuffer[16*nxt]==curdir) && (directoryBuffer[16*nxt+1]==0xFF);
+            }while(!found && nxt!=idx);
+            if(found){
+                //Hapus keseluruhan string
+                while(j>3){
+                    interrupt(0x10, 0xE*256+8,0,0,0);
+                    j--;
+                }
+                for(k=3; k<i; k++){
+                    interrupt(0x10, 0xE*256+' ',0,0,0);
+                }
+                for(k=3; k<i; k++){
+                    interrupt(0x10, 0xE*256+8,0,0,0);
+                    string[k] = 0;
+                }
+                //Tulis autocomplete yang diperoleh
+                i=3;
+                while(i<17 && directoryBuffer[16*nxt+i-1]!=0){
+                    interrupt(0x10, 0xE*256 + directoryBuffer[16*nxt+i-1],0,0,0);
+                    string[i] = directoryBuffer[16*nxt+i-1];
+                    i++;
+                }
+                //Update variabel
+                j=i;
+                idx = nxt;
+            }
+        }else if((i>=3 && strcmpn(string, "ls ", 3)
+                ||i>=3 && strcmpn(string, "ln ", 3)
+                ||i>=4 && strcmpn(string, "cat ", 4)) 
+                && c==','){
+            if(i>=4 && strcmpn(string, "cat ", 4)){
+                len = 4;
+            }else{
+                len = 3;
+            }
+            nxt = idx;
+            found = 0;
+            do{
+                nxt++;
+                if(nxt==64){
+                    nxt=0;
+                }
+                found = (directoryBuffer[16*nxt]==curdir) && (directoryBuffer[16*nxt+1]!=0xFF);
+            }while(!found && nxt!=idx);
+            if(found){
+                //Hapus keseluruhan string
+                while(j>len){
+                    interrupt(0x10, 0xE*256+8,0,0,0);
+                    j--;
+                }
+                for(k=len; k<i; k++){
+                    interrupt(0x10, 0xE*256+' ',0,0,0);
+                }
+                for(k=len; k<i; k++){
+                    interrupt(0x10, 0xE*256+8,0,0,0);
+                    string[k] = 0;
+                }
+                //Tulis autocomplete yang diperoleh
+                i=len;
+                while(i<17 && directoryBuffer[16*nxt+2+i-len]!=0){
+                    interrupt(0x10, 0xE*256 + directoryBuffer[16*nxt+2+i-len],0,0,0);
+                    string[i] = directoryBuffer[16*nxt+2+i-len];
+                    i++;
+                }
+                //Update variabel
+                j=i;
+                idx = nxt;
+            }
+        }else if(c==0xD){
+            interrupt(0x10, 0x0E*256+c, 0, 0, 0);
+            // If enter
+            // Add Carriage Return, so the next print will move to start of the newline
+            string[i] = '\r';
+            // Add Newline
+            string[i+1] = '\n';
+            // Add EOF
+            string[i+2] = '\0';
+            break;
+        } else if(c==0x8){
+            // If backspace
+            if(j > 0){//i>0
+                // Check if there is any char input
+                // delete by change the latest input char display to spaces
+                char x;
+                interrupt(0x10, 0xE*256+c,0,0,0);
+                for(k=j; k<i; k++){
+                    string[k-1] = string[k];
+                    x = string[k-1];
+                    interrupt(0x10, 0xE*256+x,0,0,0);
+                }
+                string[i-1] = ' ';
+                x = ' ';
+                interrupt(0x10, 0xE*256+x,0,0,0);
+                for(k=i; k>=j; k--){
+                    interrupt(0x10, 0xE*256+c,0,0,0);
+                }
+                j--;
+                i--;
+            }
+        } else if (c == '<'){
+            // Periksa bahwa inputnya left arrow,
+            if(j>0){
+                char back = 0x8;
+                interrupt(0x10, 0xE*256+back,0,0,0);
+                j--;
+            }
+        } else if (c == '>'){
+            // Periksa bahwa inputnya shift+.
+            if(j<i){
+                char x = string[j];
+                interrupt(0x10, 0xE*256+x,0,0,0);
+                j++;
+            }
+        }else{
+            // Char input
+            // If user press special function key, it will reas as 0x0
+            for(k=i; k>j; k--){
+                string[k] = string[k-1];
+            }
+            string[j] = c;
+            i++;
+            for(k=j; k<i; k++){
+                c = string[k];
+                interrupt(0x10, 0xE*256+c,0,0,0);
+            }
+            j++;
+            c = 0x8;
+            for(k=i; k>j; k--){
+                interrupt(0x10, 0xE*256+c,0,0,0);
+            }
+        }
+    }
+}
+
+
+void ls(char parentIndex){
+    // Initialization
+    int id, nameLength, count;
+    // Jika parentIndex bukan folder tapi file
+    id = parentIndex;
+    if(id!= 0xFF && directoryBuffer[id*16+1] != 0xFF){
+        interrupt(0x21, 0x00, "(file) ", 0, 0);
+        for(nameLength=0; nameLength<14; nameLength++){
+            if(directoryBuffer[id*16 + 2 + nameLength] == '\0'){
+                break;
+            }
+            interrupt(0x10, 0xE00 + directoryBuffer[id*16 + 2 + nameLength], 0, 0, 0);
+        }
+        interrupt(0x21, 0x00, "\r\n\0", 0, 0);
+        return;
+    }
+    // Jika parentIndex ialah folder
+    count = 0;
+    // Check for all reserved memory for files
+    // Since 32 files/directory can stored in each sector so there can be up to 64 files/directory
+    for(id=0; id<64;id++){
+        if(directoryBuffer[id*16] == parentIndex){
+            count++;
+            if(directoryBuffer[id*16+1] == 0xFF){
+                // Check if entry index 0xFF, it's a directory. Beside that is a files
+                interrupt(0x21, 0x00, "(dir)  ", 0, 0);
+            }else{
+                interrupt(0x21, 0x00, "(file) ", 0, 0);
+            }
+            // Output file or directory name
+            for(nameLength=0; nameLength<14; nameLength++){
+                if(directoryBuffer[id*16 + 2 + nameLength] == '\0'){
+                    break;
+                }
+                interrupt(0x10, 0xE00 + directoryBuffer[id*16 + 2 + nameLength], 0, 0, 0);
+            }
+            interrupt(0x21, 0x00, "\r\n\0", 0, 0);
+        }
+    }
+    // If there is no files/directory print a string that indicates it
+    if (count== 0){
+		interrupt(0x21, 0x00, "Direktori ini kosong\r\n\0", 0, 0);
+	}
+}
+
+void cd(char *fileName){
+    // Initialization
+    int id, found, len;
+    found = -1;
+    for(len=0; fileName[len]!='/' && fileName[len]!='\r'; len++){}
+    // Mengecek apakah cd . atau cd ..
+    // Mencari folder yang namanya sesuai
+    for(id=0; id<64; id++){
+        if(directoryBuffer[id*16] == curdir){
+            if(directoryBuffer[id*16+1] == 0xFF){
+                if(stringLength(directoryBuffer + (id*16 + 2), 14) == len){
+                    if(strcmpn(directoryBuffer + (id*16 + 2), fileName, len)){
+                        found = id;
                     }
-
-                    filesNum = filesIdx*16;
-                    // buat folder baru
-                    writeDir(files,filesNum,currParentIdx,0xFF,currFlName);
-
-                    currParentIdx = filesIdx;
                 }
             }
-            
-
-            j = 0;  
-        } else {
-            j++;
         }
-        i++;
-        
     }
-    currFlName[j] = pathTarget[i];
-    // Cek apakah nama file valid (tidak boleh kosong, kalau kosong berarti cuma create folder doang)
-    
-    
-    if (strcmp(currFlName,"")) {
-        printString("ERROR : Nama file tidak valid\n");
-        //*sectors = -5;
-        return;
+    if(len==2 && fileName[0] == '.' && fileName[1] == '.'){
+        if(curdir==0xFF){
+            interrupt(0x21, 0x00, "Udah di root\r\n\0", 0,0);
+        } else{
+            while (!(curDirName[itrDirName] == '/')) {
+                curDirName[itrDirName--] = '\0';
+            }
+            curDirName[itrDirName] = '\0';
+            curdir = directoryBuffer[16*curdir];
+        }        
+    }else if(found<0){
+        if(!(len == 1 && fileName[0] == '.')){
+            interrupt(0x21, 0x00, "Gaada folder dengan nama ini\r\n\0", 0, 0);
+        }
+    }else{
+        //Mengupdate curDirName dan curdir
+        curDirName[itrDirName] = '/';
+        itrDirName++;
+        for(id = 0; id<len; id++){
+            curDirName[itrDirName] = fileName[id];
+            itrDirName++;
+        }
+        curdir = found;
     }
-
-    // 3b. Cek apakah sudah file udah ada
-    found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
-    if (found) {
-        printString("ERROR : File sudah ada\n");
-        //*sectors = -1;
-        return;
+    if(fileName[len]=='/'){
+        cd(fileName + len + 1);
     }
-    // cari files yang kosong
-    filesIdx = foundEmptyDir(files);
-    if (filesIdx == -1) {
-        printString("ERROR : Tidak cukup entri di files\n");
-        //*sectors = -2;
-        return;
-    }
-    filesNum = filesIdx*16;
-
-
-    // 5. Buat File
-    writeDir(files,filesNum,currParentIdx,files[fileSourceIdx*16+1],currFlName);
-
-    //writeSector(map,0x100);
-	writeSector(files,0x101);
-    writeSector(files+512,0x102);
-    printString("Linking Success!\n");
-    //*sectors = secIdx;
-    return;
 }
 
-void consdot(char* dest, char* add) {
-    int lenAdd;
-    int lenDest;
-    int i, j;
+void mkdir(char* folderName){
+    //foldername yang dipassing ternyata kelebihan 2 karakter \r\n
+    //akan dihapus terlebih dahulu
 
-    lenAdd = strlen(add);
-    lenDest = strlen(dest);
-
-    // printString("\nm1 ");
-    // printString(dest);
-    // printString(" m1");
-    // printString("\nm2 ");
-    // printString(add);
-    // printString(" m2\n");
-    i = lenDest-1;
-    while (i >= 0)
-    {
-        dest[i+lenAdd] = dest[i];
-        i--;
+    int id, found, icpy, len;
+    if(stringLength(folderName, 17)==17){
+        interrupt(0x21, 0x00, "Nama folder kepanjangan a\r\n\0", 0, 0);
+        return;
     }
-    
-    i = 0;
-    while (i < lenAdd)
-    {
-        
-        dest[i] = add[i];
-        i++;
+    len = stringLength(folderName, 16);
+    folderName[len-2] = 0;
+    folderName[len-1] = 0;
+    //Mencari tempat kosong untuk menyimpan folder jika tidak ada yang namanya sama
+    //mulai dari 1 karena 0 untuk shell
+    for(id=1; id<64; id++){
+        if(directoryBuffer[16*id+1]==0xFF){
+            if(directoryBuffer[16*id] == curdir){
+                if(stringLength(directoryBuffer+16*id+2, 14)==len-2){
+                    if(strcmpn(folderName, directoryBuffer+16*id+2, len-2)){
+                        break;
+                    }
+                }
+            }
+        }
+        if(directoryBuffer[16*id+1]==0){
+            break;
+        }
     }
-    dest[lenDest+lenAdd] = '\0';
-    // printString(dest);
+    if(id==64){
+        interrupt(0x21, 0x00, "Not enough space for mkdir gan\r\n\0", 0, 0);
+    }else if(directoryBuffer[16*id+1]==0){
+        directoryBuffer[16*id]=curdir;
+        directoryBuffer[16*id+1]=0xFF;
+        for(icpy=0; icpy<len-2; icpy++){
+            directoryBuffer[16*id+2+icpy]=folderName[icpy];
+        }
+        for(icpy=len-2; icpy<14; icpy++){
+            directoryBuffer[16*id+2+icpy]=0;
+        }
+    }else{
+        interrupt(0x21, 0x00, "Nama folder sudah terpakai dalam level ini\r\n\0", 0, 0);
+    }
 }
 
-
-
-
-char* append(char* first, char* last){
-    //const int lenResult = strlen(first) + strlen(last);
-    char result[256]; 
-    int i,j;
-
-    i = 0;
-    for(i;i<strlen(first);i++){
-        result[i] = first[i];
+void ln(char parentIndex, char* fileName1, char* fileName2){
+    char fileContent[512*16];
+    int i, isSuccess, isSuccess2;
+    for (i = 0; i < 512*16; i++) {
+		fileContent[i] = 0x0;
+	}
+    interrupt(0x21, 0x04 + parentIndex*256, fileContent, fileName1, &isSuccess);           
+    if (isSuccess==1){
+        interrupt(0x21, 0x05 + (parentIndex)*256, fileContent, fileName2, &isSuccess2);
+        if(isSuccess2==1){
+            interrupt(0x21, 0x00, "Berhasil ln mode hard link\r\n\0", 0, 0);
+        }else if(isSuccess2==-3){
+            interrupt(0x21, 0x00, "Sektor tidak cukup\r\n\0", 0, 0);
+        }else if(isSuccess2==-2){
+            interrupt(0x21, 0x00, "Sektor file tidak cukup\r\n\0", 0, 0);
+        } else if(isSuccess2==-1){
+            interrupt(0x21, 0x00, "File nama sama sudah ada brow\r\n\0", 0, 0);
+        }else if(isSuccess2==-4) {
+            interrupt(0x21, 0x00, "Sektor file tidak cukup\r\n\0", 0, 0);
+        }else{
+            interrupt(0x21, 0x00, "Uknown error\r\n\0", 0, 0);
+        }
+    } else if(isSuccess==-1) {
+        interrupt(0x21, 0x00, "File yang akan di-link tidak ditemukan dalam direktori ini\r\n\0", 0, 0);
     }
-    j = 0;
-    for(j;j<strlen(last);j++){
-        result[i+j] = last[j];
+            
+    // Load ulang files sector at 0x101 and 0x102 karena ada perubahan setelah writefile berhasil
+    interrupt(0x21, 0x2, directoryBuffer, 0x101, 0);
+    interrupt(0x21, 0x2, directoryBuffer+512, 0x102, 0);
+};
+
+int stringLength(char *string, int max) {
+	int length = 0;
+	while (string[length] != 0 && length < max) {
+		length++;
+	}
+	return length;
+}
+
+int strcmp(char* strA, char* strB){
+    int i = 0;
+    int result =1;
+    while(i<128 && result){
+        if(strA[i] != strB[i]){
+            //both string is different
+            result = 0;
+        } else if(strA[i]=='\0' && strB[i] == '\0'){
+            //both string is same and have length <128 
+            i = 128; 
+        } else{
+            i++;
+        }
     }
-    result[i+j] = '\0';
     return result;
 }
 
-void help(){
-	printString("help  listing all possible commands\n");
-	printString("cd    changes the current directory\n");
-	printString("ls    lists all files in the current directory\n");
-	printString("cat   view contain of given file\n");
-	printString("ln    create a hard link or a symbolic link to an existing file or directory\n");
-    printString("prev  execute previous command (up to 3 command)\n"); 
-}
-
-void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3){
+int strcmpn(char* strA, char* strB, int n){
+    // Compare half of string 
     int i = 0;
-    if(cmd[i] == '1'){
-        printString("\nexecuting ");
-        printString(cmd1);
-        printString("\n");
-        executecmd(cmd1,cmd1,cmd2,cmd3,currDirIdx);
-    }else if(cmd[i] == '2'){
-        printString("\nexecuting ");
-        printString(cmd2);
-        printString("\n");
-        executecmd(cmd2,cmd1,cmd2,cmd3,currDirIdx);
-    }else if(cmd[i] == '3'){
-        printString("\nexecuting ");
-        printString(cmd3);
-        printString("\n");
-        executecmd(cmd3,cmd1,cmd2,cmd3,currDirIdx);
-    }else{
-        printString("command out of bound\n");
+    int result = 1;
+    while(i<n && result){
+        if(strA[i] != strB[i]){
+            //both string is different
+            result = 0;
+        } else{
+            i++;
+        }
     }
+    return result;
 }
-
