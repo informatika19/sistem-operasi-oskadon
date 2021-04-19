@@ -3,6 +3,7 @@
         "*.pl": "prolog",
         "*.txt": "django-txt",
         "xlocale": "c",
-        "folderio.h": "c"
+        "folderio.h": "c",
+        "boolean.h": "c"
     }
 }

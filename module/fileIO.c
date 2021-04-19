@@ -101,26 +101,26 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex){
     
     sectorsCount = 0;
     // Mengecek apakah ada baris di sectors yang masih bisa diisi, jumlah baris di sectors ada 32
-        for(sectorsCount = 0; sectorsCount < 32; sectorsCount++){
-        // Jika ada baris yang kosong
-            if((sectors2[sectorsCount*16]) == 0x00){ 
-        // printString("sectors kosong found \r\n\0");
-                break;
-            }
+    for(sectorsCount = 0; sectorsCount < 32; sectorsCount++){
+    // Jika ada baris yang kosong
+        if((sectors2[sectorsCount*16]) == 0x00){ 
+    // printString("sectors kosong found \r\n\0");
+            break;
         }
+    }
     // FLOWCHART::Tidak cukup -> Hentikan Proses Penulisan File
     // Apabila jumlah sektor tidak cukup
-        if (sectorCount < sectorNeed) {
-            *sectors = NOT_ENOUGH_SECTOR; 
-        // printString("Sektor map tidak cukup \r\n\0");
-        return;
-        }
+    if (sectorCount < sectorNeed) {
+        *sectors = NOT_ENOUGH_SECTOR; 
+    // printString("Sektor map tidak cukup \r\n\0");
+    return;
+    }
     // Apabila tidak ada baris di sectors yang bisa diisi
-        if(sectorsCount == 32) {
-            *sectors = NOT_ENOUGH_SECTOR;
-        // printString("entry sectors tidak cukup \r\n\0");
-            return;
-        }
+    if(sectorsCount == 32) {
+        *sectors = NOT_ENOUGH_SECTOR;
+    // printString("entry sectors tidak cukup \r\n\0");
+        return;
+    }
     // Validasi folder
     // Blom kebayang caranya 
     
@@ -191,14 +191,13 @@ void deleteFile(char *buffer, char *path, int *result, char parentIndex) {
     char map[512];
     char files[512*2];
     char sectors2[512];
-    int fileIdx, found, pathLength;
+    int fileIdx, found, pathLength, mapIdx;
     // FLOWCHART :: Begin
     // FLOWCHART :: Baca Sektor DIR
     readSector(map, 0x100);
     readSector(files, 0x101); 
     readSector(files+512, 0x102);
     readSector(sectors2, 0x103);
-    
     
     // FLOWCHART::Mencari file yang namanya sesuai
     pathLength = stringLength(path, 14);
@@ -215,18 +214,28 @@ void deleteFile(char *buffer, char *path, int *result, char parentIndex) {
         // printString("ga nemu gaes\r\n");
     } else {
         int secIdx, secPos, i;
+        // Dapatkan sectorIdx
         secIdx = files[fileIdx * 16 + 1];
 
         for (i = 0; i < 16; i++) {
+            // sector posisi
             secPos = secIdx * 16 + i;
             if (sectors2[secPos] == 0) {
-                //printString("End of file..\n\r");
                 break;
             }
-            //printString("Reading sector\n\r");
-            // clear(buffer + (i * 512), 512);
-            readSector(buffer + (i * 512), sectors2[secPos]);
+            //delete map
+            mapIdx = sectors2[secPos];
+            map[mapIdx] = 0x00;
+
+            // delete sectors2
+            sectors2[secPos] = 0x00;
         }
+
+        // delete entry files
+        for (i = 0; i < 16; i++) {
+            files[fileIdx * 16 + i] = 0x00;
+        }
+        
         
         *result = 1;
         //ini kayanya fix

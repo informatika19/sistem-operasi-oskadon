@@ -24,5 +24,5 @@ gcc loadFile_coba.c -o loadFile
 # Compile dan load shell
 bcc -ansi -c -o cek.o cek.c
 nasm -f as86 lib.asm -o lib_asm.o
-ld86 -o cek -d cek.o lib_asm.o fileIO.o math.o sector.o text.o
+ld86 -o cek -d cek.o lib_asm.o
 ./loadFile cek

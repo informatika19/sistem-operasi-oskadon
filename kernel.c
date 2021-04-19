@@ -74,8 +74,8 @@ void executeProgram(char *filename, int segment, int *success) {
         }
         launchProgram(segment);
     } else if (*success = -1){
-        // Ada kesalahan
-    return;
+        printString("File tidak ditemukkan");
+        return;
     }
 }
 

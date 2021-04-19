@@ -1,3 +1,9 @@
+#include "module/boolean.h"
+#include "module/fileIO.h"
+#include "module/folderIO.h"
+#include "module/math.h"
+#include "module/text.h"
+
 int resolvePath(int from, char *path);
 void inputWithComplete(char *string);
 void ls(char parentIndex);

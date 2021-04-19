@@ -36,7 +36,7 @@ gcc loadFile.c -o loadFile
 # compile shell
 bcc -ansi -c -o shell.o shell.c
 nasm -f as86 lib.asm -o lib_asm.o
-ld86 -o shell -d shell.o lib_asm.o 
+ld86 -o shell -d shell.o lib_asm.o fileIO.o folderIO.o math.o text.o
 ./loadFile shell
 
 
