@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.pl": "prolog",
+        "*.txt": "django-txt",
+        "xlocale": "c",
+        "folderio.h": "c"
+    }
+}

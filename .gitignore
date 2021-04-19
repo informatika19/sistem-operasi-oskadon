@@ -1,7 +1,10 @@
-application/cache
-**/.vscode
-system.img
-*.txt
 *.o
-bootloader
+*.img
 kernel
+bootloader
+bochsout.txt
+*_asm*
+*.bin
+shell
+loadFile
+shell

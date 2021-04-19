@@ -10,6 +10,8 @@ global _makeInterrupt21
 global _launchProgram
 extern _handleInterrupt21
 
+
+
 ;void putInMemory (int segment, int address, char character)
 _putInMemory:
 	push bp
@@ -80,6 +82,8 @@ _interrupt21ServiceRoutine:
 
 	iret
 
+
+
 ;this is called to start a program that is loaded into memory
 ;void launchProgram(int segment)
 _launchProgram:
@@ -99,3 +103,5 @@ _launchProgram:
 	mov bp,0xfff0
 
 jump:	jmp 0x0000:0x0000	;and start running (the first 0000 is changed above)
+
+

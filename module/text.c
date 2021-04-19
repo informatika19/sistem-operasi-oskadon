@@ -1,51 +1,19 @@
 #include "text.h"
-#include "math.h"
 
-int strlen(char* buff) {
-    int i = 0;
-    while (buff[i] != '\0') {
-        i++;
-    }
-    return i;
-}
 
-int strcmp(char* a, char* b) {
-    int i;
-
-    if (strlen(a) != strlen(b)) {
-        return 0;
-    }
-
-    i = 0;
-    while (i < strlen(a)) {
-        if(a[i] != b[i]) {
-            return 0;
-        }
-        i++;
-    }
-
-    return 1;
-}
-
-void strcpy(char* dest, char* src) {
-    int i;
-
-    i = 0;
-    for (i; i < strlen(src); i++) {
-        dest[i] = src[i];
-    }
-
-    src[i] = 0x00;
-    dest[i] = 0x00;
-}
-
-void clear(char* buffer, int length) {
-    int i = 0;
-    while (i < length) {
-        buffer[i] = 0x0;
-    }
-}
-
+// void printString(char *string){
+//   int i = 0;
+//   char c = string[i];
+//   while (c != '\0'){
+//     // AH = 0x0E for teletype output , AL = character to print
+//     int AL = c;
+//     int AH = 0x0E*256 ;
+//     int AX = AH + AL;
+//     interrupt(0x10, AX, 0, 0, 0);
+//     i = i + 1;
+//     c = string[i];
+//   }
+// }
 void printString(char* string) {
     int AL = 0x0E00;
     int i = 0;
@@ -60,117 +28,112 @@ void printString(char* string) {
     }
 }
 
-void readString(char* string) {
-    int INT_10H = 0x10;
-    int INT_16H = 0x16;
-
-    int AL = 0x0E00;
-    int loop = 1;
-    int i = 0;
-    int ascii;
-
-    while (loop)
-    {
-        ascii = interrupt(INT_16H,0,0,0,0);
-        if (ascii == '\r') {
-            string[i] = '\0';
-            interrupt(INT_10H,AL+'\n',0,0,0);
-            interrupt(INT_10H,AL+'\r',0,0,0);
-            loop = 0;
-        } else if (ascii == '\b') {
-            if (i > 0 && mod(i,80) != 0) {
-                interrupt(INT_10H,AL+'\b',0,0,0);
-                interrupt(INT_10H,AL+'\0',0,0,0);
-                interrupt(INT_10H,AL+'\b',0,0,0);
-                i--;
-            }
-        } else {
-            string[i] = ascii;
-            interrupt(INT_10H,AL+ascii,0,0,0);
-            i++;
-        }      
+void readString(char *string){
+  // initialize variable
+  int i = 0; //string's length
+  int j = 0; //input position
+  int k = 0; //for loop index
+  char c = '\0';
+  while(1){
+    // Wait for keypress and read character from keypress/keyboard
+    c = interrupt(0x16, 0, 0, 0, 0);
+    // Display input from keyboard
+    if(c==0xD){
+      interrupt(0x10, 0x0E*256+c, 0, 0, 0);
+      // If enter
+      // Add Carriage Return, so the next print will move to start of the newline
+      string[i] = '\r';
+      // Add Newline
+      string[i+1] = '\n';
+      // Add EOF
+      string[i+2] = '\0';
+      break;
+    } else if(c==0x8){
+      // If backspace
+      if(j > 0){//i>0
+        // Check if there is any char input
+        // delete by change the latest input char display to spaces
+        char x;
+        interrupt(0x10, 0xE*256+c,0,0,0);
+        for(k=j; k<i; k++){
+          string[k-1] = string[k];
+          x = string[k-1];
+          interrupt(0x10, 0xE*256+x,0,0,0);
+        }
+        string[i-1] = ' ';
+        x = ' ';
+        interrupt(0x10, 0xE*256+x,0,0,0);
+        for(k=i; k>=j; k--){
+          interrupt(0x10, 0xE*256+c,0,0,0);
+        }
+        j--;
+        i--;
+      }
+    } else if (c == '<'){
+      // Periksa bahwa inputnya shift+,
+      if(j>0){
+        char back = 0x8;
+        interrupt(0x10, 0xE*256+back,0,0,0);
+        j--;
+      }
+    } else if (c == '>'){
+      // Periksa bahwa inputnya shift+.
+      if(j<i){
+        char x = string[j];
+        interrupt(0x10, 0xE*256+x,0,0,0);
+        j++;
+      }
+    }else{
+      // Char input
+      // If user press special function key, it will reas as 0x0
+      for(k=i; k>j; k--){
+        string[k] = string[k-1];
+      }
+      string[j] = c;
+      i++;
+      for(k=j; k<i; k++){
+        c = string[k];
+        interrupt(0x10, 0xE*256+c,0,0,0);
+      }
+      j++;
+      c = 0x8;
+      for(k=i; k>j; k--){
+        interrupt(0x10, 0xE*256+c,0,0,0);
+      }
     }
+  }
 }
 
-
-
-/*** Unused
-int findFileIndex(char* dir, char *path, int *result, char parentIndex) {
-    // cari file ada di index keberapa di dir
-    char files[1024], parent;
-    int fileIdx, pathIdx;
-    bool isFound;
-
-    parent = parentIndex;
-    fileIdx = 0;
-    pathIdx = 0;
-    isFound = false;
-
-    readSector(files, 0x101);
-    readSector(files + 512, 0x102);
-
-    if (path[0] == "/") { // root
-        pathIdx += 1;
-        parent = 0xFF;
-    }
-    else if (path[0] == "." && path[1] == "/") { // current dir
-        pathIdx += 2;
-    }
-
-    while (path[pathIdx] != 0) {
-        if (path[pathIdx] == "/") { // enter dir
-            if (!isFound) {
-                return -1;
-            }
-            isFound = false;
-            pathIdx += 1;
-        }
-        else if (path[pathIdx] == "." && path[pathIdx + 1] == "." && path[pathIdx + 2] == "/") {
-            if (parent == 0xFF) {
-                return -1;
-            }
-            parent = files[parent * 16];
-            pathIdx += 3;
-        }
-        else { // traverse semua file di dir
-            if (parent != files[fileIdx * 16]) { // file gak di parent
-                fileIdx += 1;
-            }
-            else if (files[fileIdx * 16 + 2] == 0) { // nama kosong
-                fileIdx += 1;
-            }
-            // file found
-            // kalo huruf pertama path sama file sama, pathIdx diupdate
-            else if (isFirstLetter(path + pathIdx, files + fileIdx * 16 + 2)) {
-                pathIdx += strlen(files + fileIdx * 16 + 2);
-                parent = fileIdx;
-                fileIdx = 0;
-                isFound = true;
-            }
-            else {
-                fileIdx += 1;
-            }
-
-            if (fileIdx >= 64) { // max 64 files
-                return -1;
-            }
-        }
-    }
-
-    return parent;
+void clear(char *buffer, int length){
+  // Clearing buffer
+  int i;
+	for (i = 0; i < length; i++) {
+		buffer[i] = 0;
+	}
 }
 
-
-bool isFirstLetter(char* first, char* compare) {
-    // ngecek apakah char first adalah huruf pertama string
-    int i;
-
-    for (i = 0; i < 14; i++) {
-        if (first[i] != compare[i]) {
-            return false;
-        }
+int stringLengthnoMax(char *string) {
+    int len = 0;
+    char* p = string;
+    while(*p) {
+      p++; 
+      len++;
     }
+    return len;
 
-    return true;
 }
-***/
+int stringLength(char *string, int max) {
+	int length = 0;
+	while (string[length] != 0 && length < max) {
+		length++;
+	}
+	return length;
+}
+int stringEqual(char *s1, char *s2, int length){
+  int equal = (stringLength(s1, length) == stringLength(s2, length));
+  int i;
+  for(i=0; i<length; i++){
+    equal = equal && (s1[i]==s2[i]);
+  }
+  return equal;
+}
