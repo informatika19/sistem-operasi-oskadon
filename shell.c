@@ -597,17 +597,17 @@ void help(){
 void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3){
     int i = 0;
     if(cmd[i] == '1'){
-        printString("\nexecuting ");
+        printString("executing ");
         printString(cmd1);
         printString("\n");
         executecmd(cmd1,cmd1,cmd2,cmd3,currDirIdx);
     }else if(cmd[i] == '2'){
-        printString("\nexecuting ");
+        printString("executing ");
         printString(cmd2);
         printString("\n");
         executecmd(cmd2,cmd1,cmd2,cmd3,currDirIdx);
     }else if(cmd[i] == '3'){
-        printString("\nexecuting ");
+        printString("executing ");
         printString(cmd3);
         printString("\n");
         executecmd(cmd3,cmd1,cmd2,cmd3,currDirIdx);
