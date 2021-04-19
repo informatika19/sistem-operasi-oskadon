@@ -7,9 +7,8 @@
 global _putInMemory
 global _interrupt
 global _makeInterrupt21
+global _launchProgram
 extern _handleInterrupt21
-
-
 
 
 
@@ -84,7 +83,25 @@ _interrupt21ServiceRoutine:
 	iret
 
 
-; _imageFile:
-; 	incbin "image.bin"       ;include the raw image binary into the kernel
+
+;this is called to start a program that is loaded into memory
+;void launchProgram(int segment)
+_launchProgram:
+	mov bp,sp
+	mov bx,[bp+2]	;get the segment into bx
+
+	mov ax,cs	;modify the jmp below to jump to our segment
+	mov ds,ax	;this is self-modifying code
+	mov si,jump
+	mov [si+3],bx	;change the first 0000 to the segment
+
+	mov ds,bx	;set up the segment registers
+	mov ss,bx
+	mov es,bx
+
+	mov sp,0xfff0	;set up the stack pointer
+	mov bp,0xfff0
+
+jump:	jmp 0x0000:0x0000	;and start running (the first 0000 is changed above)
 
 

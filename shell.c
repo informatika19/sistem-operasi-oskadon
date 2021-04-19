@@ -1,6 +1,9 @@
-#define bool unsigned char
-#define true 1
-#define false 0
+#include "module/boolean.h"
+#include "module/fileIO.h"
+#include "module/folderIO.h"
+#include "module/math.h"
+#include "module/text.h"
+#include "module/sector.h"
 
 void shell();
 void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3,int* currDirIdx);
@@ -220,11 +223,21 @@ void ls(int* currDirIdx) {
     // print dir
     i = 0;
     while (i < 32) {
-        if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
-            printString(dir+(i * 16 + 1));
+        if (dir[i * 16] == parentIdx) {
+            if (dir+(i * 16 + 1) == 0xFF) {
+                printString("*");
+            } else {
+                printString(" ");
+            }
+            
+            printString(dir+(i * 16 + 2));
             printString("\n\r");
         }
-        i += 1;
+        // if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
+        //     printString(dir+(i * 16 + 2));
+        //     printString("\n\r");
+        // }
+        // i += 1;
     }
 
     // print file
