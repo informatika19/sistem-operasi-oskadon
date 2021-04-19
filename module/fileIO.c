@@ -286,8 +286,8 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
     // Ada 16 sektor
     for (sectNum = 0; sectNum < 16; sectNum++) {
         sectPos = sectIdx * 16 + sectNum;
-        
-        if (maps[sectPos] == 0) { // EOF
+        // printString("test\n");
+        if (maps[sectPos] == 0x00) { // EOF
             break;
         }
         readSector(buffer, 0x103 + sectPos);

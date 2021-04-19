@@ -11,6 +11,7 @@
 void putInMemory (int segment, int address, char character);
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 int interrupt(int number, int AX, int BX, int CX, int DX);
+void executeProgram(char *filename, int segment, int *success, char parentIndex);
 
 // Fungsi Graphic dan Hiasan
 int modeScreen(int mode);
@@ -35,6 +36,7 @@ int main() {
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
     // shell();
+    handleInterrupt21(0xFF06, "cek", 0x2000, &dump);
 
 
     while (1) {
@@ -70,6 +72,9 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX) {
         case 0x05: 
             writeFile(BX, CX, DX, AH); 
             break;
+        case 0x6:
+            executeProgram(BX, CX, DX, AH);
+            break;
         default: 
             printString("Invalid interrupt\n"); 
     } 
@@ -95,6 +100,29 @@ int modeScreen(int mode) {
         break;
     }
     return;
+}
+
+
+void executeProgram(char *filename, int segment, int *success, char parentIndex) {
+    // Buat buffer
+    int isSuccess;
+    int dump;
+    char fileBuffer[512 * 16];
+    // Buka file dengan readFile
+    readFile(&fileBuffer, filename, &isSuccess, parentIndex);
+    
+    // If success, salin dengan putInMemory
+    if (isSuccess) {
+        // launchProgram
+        int i = 0;
+        for (i = 0; i < 512*16; i++) {
+            putInMemory(segment, i, fileBuffer[i]);
+        }
+        printString("To be running");
+        launchProgram(segment);
+    } else {
+        interrupt(0x21, 0, "File not found!", 0,0);
+    }
 }
 
 
