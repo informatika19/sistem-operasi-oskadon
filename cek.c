@@ -1,10 +1,7 @@
+#include "module/text.h"
 
 int main() {
-    interrupt(0x21, 0x00, "Cek123", 0, 0);
+    interrupt(0x21, 0x00, "Cek123\n", 0, 0);
 
-    while (1)
-    {
-        /* code */
-    }
-    
+    printString("Hello world\n");
 }

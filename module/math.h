@@ -1,5 +1,5 @@
-#ifndef _MATH_H_
-#define _MATH_H_
+#ifndef MATH_H
+#define MATH_H
 
 int mod(int a, int b);
 int div(int a, int b);

@@ -1,11 +1,7 @@
-// Library
-#include "module/boolean.h"
 #include "module/fileIO.h"
 #include "module/folderIO.h"
 #include "module/math.h"
 #include "module/text.h"
-#include "module/sector.h"
-
 
 // Fungsi Bawaan
 void putInMemory (int segment, int address, char character);
@@ -14,97 +10,74 @@ int interrupt(int number, int AX, int BX, int CX, int DX);
 void executeProgram(char *filename, int segment, int *success, char parentIndex);
 
 // Fungsi Graphic dan Hiasan
-int modeScreen(int mode);
+void opening();
 void biosLogo();
-void asciiART();
 
-
-int main() {
-    char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
-    int dump;
-
-    // Tampilkan tampilan awal bios dengan graphic
-    dump = modeScreen(2);    // Ganti mode menjadi graph mode (Sekalian clear screen)
+int main () {
+    int suc,suc2;
+    
+    // Print OS Logo
+    interrupt(0x10,0x0013,0,0,0);   // Mode Graphic
     biosLogo();
-    interrupt(0x15,0x8600,0,30,0); // wait CK:100 = 1000 ms
+    interrupt(0x15,0x8600,0,30,0);  // wait CK:100 = 1000 ms
+    interrupt(0x10,0x0003,0,0,0);   // Mode text
 
-    // Tampilkan tampilan awal bios dengan ASCII ART
-    dump = modeScreen(0);    // Ganti mode menjadi text mode (Sekalian clear screen)
-    asciiART();
-    
+    opening();
+
     makeInterrupt21();
-    // Say Hello To World!
-    handleInterrupt21 (0, "Hello World\n", 0, 0);
-    // shell();
-    
-    handleInterrupt21(0xFF06, "cek", 0x2000, &dump);
+    // writeFile("HEHEH\0","ikkeh.txt\0",suc2,0xFF);
+    handleInterrupt21(0XFF06, "shell", 0x2000, &suc);
 
-
-    while (1) {
-        // Loop selamanya untuk meminta input string dari user dan menampilkannya pada layar
-        readString(buff);
-        printString(buff);
-        printString("\n");
-        // executeProgram("cek", 0x2000,  &dump, 0xFF);
-    };
 }
 
 
-// Membuat Interupt21 (DOS Interupt) untuk menjalankan perintah dari pengguna
-void handleInterrupt21 (int AX, int BX, int CX, int DX) { 
+void handleInterrupt21 (int AX, int BX, int CX, int DX){
     char AL, AH; 
     AL = (char) (AX); 
     AH = (char) (AX >> 8); 
-    switch (AL) { 
-        case 0x00: 
-            printString(BX); 
-            break; 
-        case 0x01: 
-            readString(BX); 
-            break; 
-        case 0x02: 
-            readSector(BX, CX); 
-            break; 
-        case 0x03: 
-            writeSector(BX, CX); 
-            break; 
-        case 0x04: 
+    switch (AL) {
+        case 0x0:
+            printString(BX);
+            break;
+        case 0x1:
+            readString(BX);
+            break;
+        case 0x2:
+            readSector(BX, CX);
+            break;
+        case 0x3:
+            writeSector(BX, CX);
+            break;
+        case 0x4: 
             readFile(BX, CX, DX, AH); 
             break; 
-        case 0x05: 
+        case 0x5: 
             writeFile(BX, CX, DX, AH); 
             break;
         case 0x6:
             executeProgram(BX, CX, DX, AH);
             break;
-        default: 
-            printString("Invalid interrupt\n"); 
-    } 
-}
-
-
-// Mode yang tersedia dan dapat digunakan
-int modeScreen(int mode) {
-    /* mode 0 : default text
-       mode 1 : text ART
-       mode 2 : graphical
-    */
-    switch (mode)
-    {
-    case 1:
-        interrupt(0x10,0x0000,0,0,0);
-        break;
-    case 2:
-        interrupt(0x10,0x0013,0,0,0);
-        break;
-    default:
-        interrupt(0x10,0x0003,0,0,0);
-        break;
+        default:
+            printString("Invalid interrupt");
     }
-    return;
 }
 
-
+void executeProgram(char *filename, int segment, int *success) {
+    char buffer[512 * 16];
+    int i;
+    
+    clear(buffer, 512 * 16);
+    readFile(&buffer, filename, success, 0xFF);
+    if (*success) {
+        for (i=0; i<512 * 16; i++) {
+            putInMemory(segment, i, buffer[i]);
+        }
+        launchProgram(segment);
+    } else {
+        printString("File tidak ditemukkan");
+        return;
+    }
+}
 void executeProgram(char *filename, int segment, int *success, char parentIndex) {
     // Buat buffer
     int isSuccess;
@@ -112,14 +85,13 @@ void executeProgram(char *filename, int segment, int *success, char parentIndex)
     char fileBuffer[512 * 16];
     // Buka file dengan readFile
     clear(fileBuffer, 512 * 16);
-    readFile(&fileBuffer, filename, &isSuccess, parentIndex);
+    readFile(&fileBuffer, filename, success, parentIndex);
     
     // If success, salin dengan putInMemory
-    if (isSuccess) {
+    if (*success) {
         // launchProgram
         int i = 0;
         for (i = 0; i < 512*16; i++) {
-            if (i % 512 == 0)
             putInMemory(segment, i, fileBuffer[i]);
         }
         printString("To be running\n");
@@ -131,8 +103,7 @@ void executeProgram(char *filename, int segment, int *success, char parentIndex)
 }
 
 
-// Bonus - ASCII ART
-void asciiART() {
+void opening() {
     printString("\n");
     printString("  :'#######:::'######::'##:::'##::::'###::::'########:::'#######::'##::: ##:\n");
     printString("  '##.... ##:'##... ##: ##::'##::::'## ##::: ##.... ##:'##.... ##: ###:: ##:\n");
@@ -151,7 +122,6 @@ void asciiART() {
     printString("\n");
     
 }
-
 
 // Bonus - BiosLogo
 void biosLogo() {
@@ -200,3 +170,5 @@ void biosLogo() {
         y++;
     }
 }
+
+

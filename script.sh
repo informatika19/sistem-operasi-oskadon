@@ -22,7 +22,9 @@ echo "Success, Disk Image has been created"
 gcc loadFile_coba.c -o loadFile
 
 # Compile dan load shell
-bcc -ansi -c -o cek.o cek.c
+bcc -ansi -c -o shell.o shell.c
 nasm -f as86 lib.asm -o lib_asm.o
-ld86 -o cek -d cek.o lib_asm.o
-./loadFile cek
+ld86 -o shell -d shell.o lib_asm.o fileIO.o folderIO.o math.o sector.o text.o
+./loadFile shell
+
+./loadFile text.txt

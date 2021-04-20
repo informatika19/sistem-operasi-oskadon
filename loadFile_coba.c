@@ -80,6 +80,25 @@ int main(int argc, char* argv[])
         printf("Tidak cukup sektor yang tersedia\n");
         return -1;
     }
+
+	// Hitung panjang file
+    fseek(loadedFile, 0, SEEK_END);
+    long int fileSize = ftell(loadedFile);
+    rewind(loadedFile);
+
+	// Hitung sector yang dibutuhkan 
+    int sectorLength;
+    if (fileSize % 512 == 0){
+        sectorLength = fileSize/512;
+    }else{
+        sectorLength = fileSize/512 + 1;
+    }
+
+    // Cek apakah sector melebihi batas
+    if (sectorLength > 16){
+        printf("Files terlalu besar!\n");
+        return -1;
+    }
 	
 	
 	//Bersihkan nama file
@@ -142,7 +161,7 @@ int main(int argc, char* argv[])
 
 	fclose(system);
 	fclose(loadedFile);
-	printf("%s diload ke sector %d\n", argv[1], sectorIdx);
-    printf("loadedFilee success!\n");
+	printf("%s diload ke sector idx %d\n", argv[1], sectorIdx);
+    printf("loadFile Success!\n");
 	return 0;
 }

@@ -1,7 +1,0 @@
-application/cache
-**/.vscode
-system.img
-*.txt
-*.o
-bootloader
-kernel

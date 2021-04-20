@@ -1,0 +1,10 @@
+*.o
+*.img
+kernel
+bootloader
+bochsout.txt
+*_asm*
+*.bin
+shell
+loadFile
+shell
