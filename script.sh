@@ -19,7 +19,7 @@ dd if=kernel of=system.img bs=512 conv=notrunc seek=1
 echo "Success, Disk Image has been created"
 
 # Compile loadFile
-gcc loadFile_coba.c -o loadFile
+gcc loadFile.c -o loadFile
 
 # Compile dan load shell
 bcc -ansi -c -o shell.o shell.c

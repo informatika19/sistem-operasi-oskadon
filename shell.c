@@ -5,7 +5,6 @@
 #include "module/text.h"
 #include "module/sector.h"
 
-void shell();
 void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3,int* currDirIdx);
 int modifiedstrcmp(char* a, char* b, int len,int start);
 int ignoreSpace(char* cmd, int start);
