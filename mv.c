@@ -4,6 +4,10 @@
 
 int main() {
     // KAMUS
+    int dump;
+    char parentIdx[512];
+    char param[512];
+
     char files[1024];
     char currFlName[128];
     char sourcePath[512];
@@ -20,6 +24,59 @@ int main() {
     bool found;
     int i,j;
 
+    interrupt(0x21, 0, "Executing mv...\n\0",0,0);   // Entahlah ini harus ada
+    // Bersihkan buffer
+    clear(parentIdx,512);
+    clear(param,512);
+    clear(sourcePath,512);
+    clear(targetPath,512);
+    
+    
+    // Baca Parameter dan ParentIdx
+    readSector(parentIdx,800);
+    readSector(param,801);
+
+    // printString("Test param\n");
+    // printString(param);
+    // printString("\n");
+
+    // Copy parentIdx
+    currParentIdx = parentIdx[0];
+
+    // Copy parameter
+    i = 0;
+    j = 0;
+    // Source File
+    i = ignoreSpace(param, i);
+    while (param[i] != ' ' && param[i] != '\0')
+    {
+        sourcePath[j] = param[i];
+        i++;
+        j++;
+    }
+
+    // Target Folder
+    i = ignoreSpace(param, i);
+    j = 0;
+    while (param[i] != ' ' && param[i] != '\0')
+    {
+        targetPath[j] = param[i];
+        i++;
+        j++;
+    }
+
+    // printString("Test Path\n");
+    // printString(sourcePath);
+    // printString("\n");
+    // printString(targetPath);
+    // printString("\n");
+
+    // Test apakah argumen valid;
+    if (strlen(sourcePath) == 0 || strlen(targetPath) == 0) {
+        printString("Parameter tidak valid\n");
+        interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+    }
+    
     // 0. inisialisasi
     readSector(files, 0x101);
     readSector(files + 512, 0x102);
@@ -38,6 +95,7 @@ int main() {
     // 2. Cari sourcePath sampe ketemu bagian file
     // printString(sourcePath);
     // printString("\n");
+    clear(currFlName,128);
     while (sourcePath[i] != '\0') {
         currFlName[j] = sourcePath[i];
 
@@ -59,7 +117,7 @@ int main() {
             else if (strcmp(currFlName,"")) 
             {
                 printString("Error: Nama folder tidak valid\n");
-                return;
+                interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
             } else {
                 // Cek apakah sudah tersedia folder yang sama
                 temp = currParentIdx;
@@ -70,8 +128,8 @@ int main() {
                     currParentIdx = *foundIdx;
                     // printString(currParentIdx);
                 } else {
-                    printString("Folder tidak ditemukan\n");
-                    return;
+                    printString("Error: Folder tidak ditemukan\n");
+                    interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
                 }
             }
             j = 0;  
@@ -86,19 +144,28 @@ int main() {
     // Cek apakah nama file valid (tidak boleh kosong)
     if (strcmp(currFlName,"")) {
         printString("Nama file tidak valid\n");
-        return;
+        interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
     }
 
     // 3. Cek file ada
     found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
     if (!found) {
-        printString("File tidak ditemukan\n");
-        return;
+        // Cek folder ada
+        found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
+        if (!found) {
+            printString("File tidak ditemukan\n");
+            interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+        } 
     }
 
     //printString("File ditemukan\n");
     currParentIdx = tempParentIdx; // Kembali ke parentIdx sekarang lagi
     sourceIdx = *foundIdx;      // Files idx ditemukan
+
+    // printString("Test Pathing Source\n");
+    // printString(currFlName);
+    // printString("\n");
+
 
     // 1. cari folder target
     i = 0;
@@ -111,12 +178,13 @@ int main() {
     // 2. Cari targetPath sampe ketemu bagian file
     // printString(targetPath);
     // printString("\n");
-    while (targetPath[i] != '\0') {
+    clear(currFlName,128);
+    
+    while (i <= strlen(targetPath)) {
         currFlName[j] = targetPath[i];
         
-        if (currFlName[j] == '/') {
+        if (currFlName[j] == '/' || currFlName[j] == '\0') {
             currFlName[j] = '\0';
-
             if (strcmp(currFlName,".")) 
             {
                 // Do Nothing, di curr dir yang sama
@@ -131,15 +199,14 @@ int main() {
             } 
             else if (strcmp(currFlName,"")) 
             {
-                printString("Error: Nama folder tidak valid\n");
-                return;
+                // printString("Error: Nama folder tidak valid\n");
+                // interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
             } else {
                 // Cek apakah sudah tersedia folder yang sama
                 temp = currParentIdx;
                 found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
                 currParentIdx = temp;
                 if (found) {
-                    printString("Folder sudah ada\n");
                     currParentIdx = *foundIdx;
                     // printString(currParentIdx);
                 } else {
@@ -147,7 +214,7 @@ int main() {
                     filesIdx = foundEmptyDir(files);
                     if (filesIdx == -1) {
                         printString("Tidak cukup entri di files\n");
-                        return;
+                        interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
                     }
 
                     filesNum = filesIdx*16;
@@ -165,31 +232,26 @@ int main() {
         i++;
         
     }
+
     currFlName[j] = targetPath[i];
+    // printString("test keluar\n");
+    // printString(currFlName);
+    // printString("\n");
 
-    // Cek apakah nama folder valid (tidak boleh kosong)
-    if (strcmp(currFlName,"")) {
-        printString("Nama folder tidak valid\n");
-        return;
-    }
-
-    found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-    if (!found) {
-        printString("Folder tujuan tidak ditemukan\n");
-        return;
-    }
-
-    // Idx folder yang ingin dijadikan parent
-    targetIdx = *foundIdx;
-
-
+    targetIdx = currParentIdx;
+    
+    // printString("Test Pathing Target\n");
+    // printString(currFlName);
+    // printString("\n");
+    
     // Ubah parent folder
-    files[sourceIdx * 16 + 1] = targetIdx;
+    files[sourceIdx * 16] = targetIdx;
     
     // Tulis kembali
     writeSector(files, 0x101);
     writeSector(files + 512, 0x102);
 
-    return;
+    printString("mv success...\n");
+    interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
 
 }

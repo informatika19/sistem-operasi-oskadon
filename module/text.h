@@ -10,8 +10,5 @@ void clear(char* buffer, int length);
 void printString(char* string);
 void readString(char* string);
 
-int stringLengthnoMax(char *string);
-int stringLength(char *string, int max);
-int stringEqual(char *s1, char *s2, int length);
-
+int ignoreSpace(char* cmd, int start);
 #endif

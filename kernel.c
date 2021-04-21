@@ -21,6 +21,7 @@ void asciiART();
 
 int main() {
     char buff[1024];    // Buff untuk menyimpan banyaknya character dari pengguna
+    char buffCurrDirIdx[512];
     int dump;
 
     // Tampilkan tampilan awal bios dengan graphic
@@ -35,9 +36,15 @@ int main() {
     makeInterrupt21();
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
-    writeFile("hamdalah","bin/test.txt",&dump,0xFF);
+    writeFile("hamdalah","titan/titan.txt",&dump,0xFF);
+    writeFile("hamdalah","bin/bin.txt",&dump,0xFF);
     
     // interrupt(0x21, 0xFF06, "cek", 0x2000, &dump);
+    clear(buffCurrDirIdx,512);
+    buffCurrDirIdx[0] = 0xFF;
+    writeSector(buffCurrDirIdx,800);
+
+    // GO TO SHELL!
     handleInterrupt21(0xFF06, "shell", 0x2000, &dump);
 
 

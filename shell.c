@@ -19,6 +19,7 @@ void consdot(char* dest, char* add);
 char* append(char* first, char* last);
 
 int main(){
+    char buffCurrDirIdx[512];
     char cmd[180],cmd1[180],cmd2[180],cmd3[180];
     int* currDirIdx;  // directory sekarang
     int i;
@@ -27,8 +28,11 @@ int main(){
     cmd3[0] = 0x00;
     // Inisialisasi
     printString("Executing Shell...\n");
-    
-    *currDirIdx = 0xFF;    //inisialisasi sebagai root;
+    clear(buffCurrDirIdx,512);
+    readSector(buffCurrDirIdx,800);
+    *currDirIdx = buffCurrDirIdx[0];
+
+    // *currDirIdx = 0xFF;    //inisialisasi sebagai root;
     while(1){
         printCurrDirName(*currDirIdx);
         printString(" $ ");
@@ -46,9 +50,15 @@ int main(){
 }
 
 void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
+    char buffCurrDirIdx[512];
+    char buffParam[512];
     int cmdIndex = 0;
     int dump;
     int tempcurrDirIdx = *currDirIdx;
+
+    clear(buffCurrDirIdx,512);
+    clear(buffParam,512);
+
     cmdIndex = ignoreSpace(cmd,cmdIndex);
     if(modifiedstrcmp(cmd,"cd",2,cmdIndex)){
         cmdIndex += 2;
@@ -82,8 +92,24 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     } else if (modifiedstrcmp(cmd,"cek",3,cmdIndex)) {
         cmdIndex += 3;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
-        writeSector(currDirIdx,800);
+
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
         interrupt(0x21, 0xFF06, "cek", 0x2000, &dump);
+        // executeProgram("cek", 0x2000, &dump, 0xFF);
+    } else if (modifiedstrcmp(cmd,"mv",2,cmdIndex)) {
+        cmdIndex += 2;
+        cmdIndex = ignoreSpace(cmd,cmdIndex);
+
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+        interrupt(0x21, 0xFF06, "mv", 0x2000, &dump);
         // executeProgram("cek", 0x2000, &dump, 0xFF);
     } else {
         //cmdIndex = ignoreSpace(cmd,cmdIndex);
@@ -106,12 +132,7 @@ int modifiedstrcmp(char* a, char* b, int len,int start){ //compare untuk beberap
     return 1;
 }
 
-int ignoreSpace(char* cmd, int start){ //return new index
-    while(cmd[start] == ' '){
-        start++;
-    }
-    return start;
-}
+
 
 void printCurrDirName(int currDirIdx) {
     char files[1024];
