@@ -37,7 +37,7 @@ int main() {
     // Say Hello To World!
     handleInterrupt21 (0, "Hello World\n", 0, 0);
     writeFile("hamdalah","titan/titan.txt",&dump,0xFF);
-    writeFile("hamdalah","bin/bin.txt",&dump,0xFF);
+    // writeFile("hamdalah","bin/bin.txt",&dump,0xFF);
     
     // interrupt(0x21, 0xFF06, "cek", 0x2000, &dump);
     clear(buffCurrDirIdx,512);
@@ -45,7 +45,8 @@ int main() {
     writeSector(buffCurrDirIdx,800);
 
     // GO TO SHELL!
-    handleInterrupt21(0xFF06, "shell", 0x2000, &dump);
+    // handleInterrupt21(0xFF06, "shell", 0x2000, &dump);
+    interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
 
 
     while (1) {

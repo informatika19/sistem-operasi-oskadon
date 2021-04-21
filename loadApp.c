@@ -6,6 +6,15 @@
 //This should be compiled with gcc and run outside of the OS
 
 #include <stdio.h>
+#include <string.h>
+#include "module/boolean.h"
+
+/** Fungsi penunjang */
+bool isFlExist(char* dir, char parrentIdx, char* name, bool folder, int* foundIdx);
+void getFlName(char* files,char filesIdx, char* name);
+void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name);
+int strcompare(char* a, char* b);
+
 
 int findFreeEntry(char* entries) {
     int i;
@@ -67,6 +76,25 @@ int main(int argc, char* argv[])
 		files[i]=fgetc(system);
 	}
 
+
+	// Buat folder bin jika belum ada
+	int binFolderIdx;	// idx bin
+	bool binExist = isFlExist(files,0xFF,"bin",true,&binFolderIdx);
+	if (!binExist) {
+		//Cari index kosong di files
+		binFolderIdx = findFreeEntry(files);	// Idx files
+		if (binFolderIdx == -1) {
+			printf("Tidak cukup tempat di files directory\n");
+			return -1;
+		}
+
+		int filesNum = binFolderIdx*16;
+		// buat folder baru
+		writeDir(files,filesNum,0xFF,0xFF,"bin");
+	}
+	
+
+
 	//Cari index kosong di files
 	int dirIdx = findFreeEntry(files);	// Idx files
 	if (dirIdx == -1) {
@@ -102,21 +130,23 @@ int main(int argc, char* argv[])
 	
 	
 	//Bersihkan nama file
-	for (i=0; i<16; i++)
-		files[dirIdx*16+i]=0x00;
+	for (i=0; i<16; i++) {
+		files[dirIdx*16 + i] = '\0';
+	}
+		
 
 	//Copy nama file
 	for (i=0; i<14; i++)
 	{
-		if(argv[1][i]==0) {
+		if(argv[1][i] == '\0') {
 			break;
 		}
-			
-		files[dirIdx*16+i+2] = argv[1][i];
+		files[dirIdx*16 + i + 2] = argv[1][i];
 	}
 	
     //Isi parent Idx, default root
-    files[dirIdx*16] = 0xFF;   
+    // files[dirIdx*16] = 0xFF;
+	files[dirIdx*16] = binFolderIdx;   
 
     //isi sectorIdx
     files[dirIdx*16+1] = sectorIdx;
@@ -162,6 +192,81 @@ int main(int argc, char* argv[])
 	fclose(system);
 	fclose(loadedFile);
 	printf("%s diload ke sector idx %d\n", argv[1], sectorIdx);
-    printf("loadFile Success!\n");
+    printf("loadApp Success!\n");
 	return 0;
+}
+
+
+
+// Fungsionalitas Tambahan
+bool isFlExist(char* dir, char parrentIdx, char* name, bool folder, int* foundIdx) {
+    // return index file yang ditemukan pada foundIdx
+    int filesIdx,j;
+    char buffName[15];
+    bool found = false;
+	
+    filesIdx = 0;
+    while (filesIdx < 64 && !found) {
+        if (dir[16*filesIdx] == parrentIdx) {            // kalau ternyata ada yang parent indexnya sama
+			getFlName(dir,filesIdx,buffName);
+            if (strcompare(buffName,name)) {         // cek apakah namanya sama
+                if ((folder && dir[16*filesIdx+1] == ((char)0xFF)) || (!folder && dir[16*filesIdx+1] != ((char) 0xFF))) {  // cek jenisnya sama
+                    found = true;
+                }   
+            }
+        }
+        filesIdx++; 
+    }
+    *foundIdx = --filesIdx;
+    return found;
+}
+
+
+void getFlName(char* files,char filesIdx, char* name) {
+    int i;
+
+    for (i = 0; i < 14; i++) {
+        name[i] = files[16*filesIdx+(2+i)];    
+    }
+    name[14] = '\0';
+}
+
+
+void writeDir(char* files, int filesNum, int parrentIdx, int sectorIdx, char* name) {
+    int i,j;
+
+    files[filesNum] = parrentIdx;
+    files[filesNum+1] = sectorIdx;
+    i = filesNum + 2;
+    
+    j = 0;
+    while (i < filesNum+15 && j < strlen(name)) { 
+        files[i] = name[j];
+        i++;
+        j++;
+    }
+    while (i < filesNum+16) {    // Padding yang kosong
+        files[i] = 0x0;
+        i++;
+    }
+}
+
+int strcompare(char* a, char* b) {
+    int i;
+
+    if (strlen(a) != strlen(b)) {
+		
+        return 0;
+    }
+
+    i = 0;
+    while (i < strlen(a)) {
+        if(a[i] != b[i]) {
+			
+            return 0;
+        }
+        i++;
+    }
+
+    return 1;
 }

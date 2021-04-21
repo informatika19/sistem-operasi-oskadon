@@ -15,8 +15,6 @@ void cat(char* param,int* currDirIdx);
 // void ln(char* param,int currDirIdx);
 void help();
 void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3);
-void consdot(char* dest, char* add);
-char* append(char* first, char* last);
 
 int main(){
     char buffCurrDirIdx[512];
@@ -59,6 +57,7 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     clear(buffCurrDirIdx,512);
     clear(buffParam,512);
 
+    // EKSEKUSI GLOBAL
     cmdIndex = ignoreSpace(cmd,cmdIndex);
     if(modifiedstrcmp(cmd,"cd",2,cmdIndex)){
         cmdIndex += 2;
@@ -98,7 +97,7 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
 
         writeSector(buffCurrDirIdx,800);
         writeSector(buffParam,801);
-        interrupt(0x21, 0xFF06, "cek", 0x2000, &dump);
+        interrupt(0x21, 0xFF06, "bin/cek", 0x2000, &dump);
         // executeProgram("cek", 0x2000, &dump, 0xFF);
     } else if (modifiedstrcmp(cmd,"mv",2,cmdIndex)) {
         cmdIndex += 2;
@@ -109,7 +108,7 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
 
         writeSector(buffCurrDirIdx,800);
         writeSector(buffParam,801);
-        interrupt(0x21, 0xFF06, "mv", 0x2000, &dump);
+        interrupt(0x21, 0xFF06, "bin/mv", 0x2000, &dump);
         // executeProgram("cek", 0x2000, &dump, 0xFF);
     } else {
         //cmdIndex = ignoreSpace(cmd,cmdIndex);
@@ -247,19 +246,18 @@ void ls(int* currDirIdx) {
     // print dir
     i = 0;
     while (i < 32) {
-        if (dir[i * 16] == parentIdx) {
+        if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != 0x00 && dir[i * 16 + 2] != 0x00) {
             if (dir[i * 16 + 1] == 0xFF) {
                 printString("*");
             } else {
                 printString(" ");
             }
-            
+
             printString(dir+(i * 16 + 2));
             printString("\n\r");
         }
         i++;
     }
-
 }
 
 void cat(char* param, int* currDirIdx)  {
@@ -282,57 +280,6 @@ void cat(char* param, int* currDirIdx)  {
     }  
 }
 
-void consdot(char* dest, char* add) {
-    int lenAdd;
-    int lenDest;
-    int i, j;
-
-    lenAdd = strlen(add);
-    lenDest = strlen(dest);
-
-    // printString("\nm1 ");
-    // printString(dest);
-    // printString(" m1");
-    // printString("\nm2 ");
-    // printString(add);
-    // printString(" m2\n");
-    i = lenDest-1;
-    while (i >= 0)
-    {
-        dest[i+lenAdd] = dest[i];
-        i--;
-    }
-    
-    i = 0;
-    while (i < lenAdd)
-    {
-        
-        dest[i] = add[i];
-        i++;
-    }
-    dest[lenDest+lenAdd] = '\0';
-    // printString(dest);
-}
-
-
-
-
-char* append(char* first, char* last){
-    //const int lenResult = strlen(first) + strlen(last);
-    char result[256]; 
-    int i,j;
-
-    i = 0;
-    for(i;i<strlen(first);i++){
-        result[i] = first[i];
-    }
-    j = 0;
-    for(j;j<strlen(last);j++){
-        result[i+j] = last[j];
-    }
-    result[i+j] = '\0';
-    return result;
-}
 
 void help(){
 	printString("help  listing all possible commands\n");

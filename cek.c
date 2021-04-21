@@ -20,6 +20,7 @@ int main() {
 
     printString("test param\n");
     printString(param);
+    printString("\n");
     
 
     // dump = findFileIdx("shell",0xFF);
@@ -29,6 +30,6 @@ int main() {
     
     
 
-    interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+    interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
     // return 1;
 }

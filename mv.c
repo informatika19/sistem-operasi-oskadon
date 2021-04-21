@@ -74,7 +74,7 @@ int main() {
     // Test apakah argumen valid;
     if (strlen(sourcePath) == 0 || strlen(targetPath) == 0) {
         printString("Parameter tidak valid\n");
-        interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+        interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
     }
     
     // 0. inisialisasi
@@ -117,7 +117,7 @@ int main() {
             else if (strcmp(currFlName,"")) 
             {
                 printString("Error: Nama folder tidak valid\n");
-                interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+                interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
             } else {
                 // Cek apakah sudah tersedia folder yang sama
                 temp = currParentIdx;
@@ -129,7 +129,7 @@ int main() {
                     // printString(currParentIdx);
                 } else {
                     printString("Error: Folder tidak ditemukan\n");
-                    interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+                    interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
                 }
             }
             j = 0;  
@@ -144,7 +144,7 @@ int main() {
     // Cek apakah nama file valid (tidak boleh kosong)
     if (strcmp(currFlName,"")) {
         printString("Nama file tidak valid\n");
-        interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+        interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
     }
 
     // 3. Cek file ada
@@ -154,7 +154,7 @@ int main() {
         found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
         if (!found) {
             printString("File tidak ditemukan\n");
-            interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+            interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
         } 
     }
 
@@ -214,7 +214,7 @@ int main() {
                     filesIdx = foundEmptyDir(files);
                     if (filesIdx == -1) {
                         printString("Tidak cukup entri di files\n");
-                        interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+                        interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
                     }
 
                     filesNum = filesIdx*16;
@@ -252,6 +252,6 @@ int main() {
     writeSector(files + 512, 0x102);
 
     printString("mv success...\n");
-    interrupt(0x21, 0xFF06, "shell", 0x2000, &dump);
+    interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
 
 }
