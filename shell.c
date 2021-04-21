@@ -47,6 +47,7 @@ int main(){
 
 void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     int cmdIndex = 0;
+    int dump;
     int tempcurrDirIdx = *currDirIdx;
     cmdIndex = ignoreSpace(cmd,cmdIndex);
     if(modifiedstrcmp(cmd,"cd",2,cmdIndex)){
@@ -78,7 +79,13 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     	cmdIndex += 4;	
     	cmdIndex = ignoreSpace(cmd,cmdIndex);
 	    prev(&cmd[cmdIndex],currDirIdx,cmd1,cmd2,cmd3);
-    }else {
+    } else if (modifiedstrcmp(cmd,"cek",3,cmdIndex)) {
+        cmdIndex += 3;
+        cmdIndex = ignoreSpace(cmd,cmdIndex);
+        writeSector(currDirIdx,800);
+        interrupt(0x21, 0xFF06, "cek", 0x2000, &dump);
+        // executeProgram("cek", 0x2000, &dump, 0xFF);
+    } else {
         //cmdIndex = ignoreSpace(cmd,cmdIndex);
         printString("'");
         printString(cmd);
@@ -336,4 +343,5 @@ void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3){
         printString("command out of bound\n");
     }
 }
+
 

@@ -37,6 +37,7 @@ int main() {
     handleInterrupt21 (0, "Hello World\n", 0, 0);
     writeFile("hamdalah","bin/test.txt",&dump,0xFF);
     
+    // interrupt(0x21, 0xFF06, "cek", 0x2000, &dump);
     handleInterrupt21(0xFF06, "shell", 0x2000, &dump);
 
 
@@ -121,9 +122,9 @@ void executeProgram(char *filename, int segment, int *success, char parentIndex)
         for (i = 0; i < 512*16; i++) {
             putInMemory(segment, i, fileBuffer[i]);
         }
-        printString("To be running\n");
+        // printString("To be running\n");
         launchProgram(segment);
-        printString("Selesai running\n");
+        // printString("Selesai running\n");
     } else {
         interrupt(0x21, 0, "File not found!", 0,0);
     }
