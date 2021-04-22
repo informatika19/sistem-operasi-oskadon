@@ -5,7 +5,6 @@
 #include "module/text.h"
 #include "module/sector.h"
 
-void shell();
 void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3,int* currDirIdx);
 int modifiedstrcmp(char* a, char* b, int len,int start);
 int ignoreSpace(char* cmd, int start);
@@ -13,13 +12,12 @@ void printCurrDirName(int currDirIdx);
 void cd(char* param,int* currDirIdx);
 void ls(int* currDirIdx);
 void cat(char* param,int* currDirIdx);
-void ln(char* param,int currDirIdx);
+// void ln(char* param,int currDirIdx);
 void help();
 void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3);
-void consdot(char* dest, char* add);
-char* append(char* first, char* last);
 
-void shell(){
+int main(){
+    char buffCurrDirIdx[512];
     char cmd[180],cmd1[180],cmd2[180],cmd3[180];
     int* currDirIdx;  // directory sekarang
     int i;
@@ -28,7 +26,11 @@ void shell(){
     cmd3[0] = 0x00;
     // Inisialisasi
     printString("Executing Shell...\n");
-    *currDirIdx = 0xFF;    //inisialisasi sebagai root;
+    clear(buffCurrDirIdx,512);
+    readSector(buffCurrDirIdx,800);
+    *currDirIdx = buffCurrDirIdx[0];
+
+    // *currDirIdx = 0xFF;    //inisialisasi sebagai root;
     while(1){
         printCurrDirName(*currDirIdx);
         printString(" $ ");
@@ -46,8 +48,16 @@ void shell(){
 }
 
 void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
+    char buffCurrDirIdx[512];
+    char buffParam[512];
     int cmdIndex = 0;
+    int dump;
     int tempcurrDirIdx = *currDirIdx;
+
+    clear(buffCurrDirIdx,512);
+    clear(buffParam,512);
+
+    // EKSEKUSI GLOBAL
     cmdIndex = ignoreSpace(cmd,cmdIndex);
     if(modifiedstrcmp(cmd,"cd",2,cmdIndex)){
         cmdIndex += 2;
@@ -61,13 +71,31 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     }else if(modifiedstrcmp(cmd,"cat",3,cmdIndex)){
         cmdIndex += 3;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
-        cat(&cmd[cmdIndex],currDirIdx);
-        *currDirIdx = tempcurrDirIdx;
+
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+
+        interrupt(0x21, 0xFF06, "bin/cat", 0x2000, &dump);
+
+        // cat(&cmd[cmdIndex],currDirIdx);
+        // *currDirIdx = tempcurrDirIdx;
     }else if (modifiedstrcmp(cmd,"ln",2,cmdIndex)){
+        // Currenly not avalible
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
-        ln(&cmd[cmdIndex],*currDirIdx);
-        *currDirIdx = tempcurrDirIdx;
+        
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+
+        interrupt(0x21, 0xFF06, "bin/ln", 0x2000, &dump);
+        // ln(&cmd[cmdIndex],*currDirIdx);
+        // *currDirIdx = tempcurrDirIdx;
     }else if(modifiedstrcmp(cmd,"help",4,cmdIndex)){
     	cmdIndex += 4;	
     	cmdIndex = ignoreSpace(cmd,cmdIndex);
@@ -77,7 +105,29 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     	cmdIndex += 4;	
     	cmdIndex = ignoreSpace(cmd,cmdIndex);
 	    prev(&cmd[cmdIndex],currDirIdx,cmd1,cmd2,cmd3);
-    }else {
+    } else if (modifiedstrcmp(cmd,"cek",3,cmdIndex)) {
+        cmdIndex += 3;
+        cmdIndex = ignoreSpace(cmd,cmdIndex);
+
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+        interrupt(0x21, 0xFF06, "bin/cek", 0x2000, &dump);
+        // executeProgram("cek", 0x2000, &dump, 0xFF);
+    } else if (modifiedstrcmp(cmd,"mv",2,cmdIndex)) {
+        cmdIndex += 2;
+        cmdIndex = ignoreSpace(cmd,cmdIndex);
+
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+        interrupt(0x21, 0xFF06, "bin/mv", 0x2000, &dump);
+        // executeProgram("cek", 0x2000, &dump, 0xFF);
+    } else {
         //cmdIndex = ignoreSpace(cmd,cmdIndex);
         printString("'");
         printString(cmd);
@@ -98,12 +148,7 @@ int modifiedstrcmp(char* a, char* b, int len,int start){ //compare untuk beberap
     return 1;
 }
 
-int ignoreSpace(char* cmd, int start){ //return new index
-    while(cmd[start] == ' '){
-        start++;
-    }
-    return start;
-}
+
 
 void printCurrDirName(int currDirIdx) {
     char files[1024];
@@ -202,15 +247,10 @@ void cd(char* param,int* currDirIdx) {
         i++;        
     }
 
-
-    // printString("Cd berhasil");
-
-
 }
 
 void ls(int* currDirIdx) {
-    char dir[512];
-    char file[512];
+    char dir[512*2];
     int i;
     int parentIdx;
 
@@ -218,385 +258,25 @@ void ls(int* currDirIdx) {
 
     // read dir & file
     readSector(dir, 0x101);
-    readSector(file, 0x102);
+    readSector(dir + 512, 0x102);
 
     // print dir
     i = 0;
     while (i < 32) {
-        if (dir[i * 16] == parentIdx) {
-            if (dir+(i * 16 + 1) == 0xFF) {
+        if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != 0x00 && dir[i * 16 + 2] != 0x00) {
+            if (dir[i * 16 + 1] == 0xFF) {
                 printString("*");
             } else {
                 printString(" ");
             }
-            
+
             printString(dir+(i * 16 + 2));
             printString("\n\r");
         }
-        // if (dir[i * 16] == parentIdx && dir[i * 16 + 1] != '\0') {
-        //     printString(dir+(i * 16 + 2));
-        //     printString("\n\r");
-        // }
-        // i += 1;
-    }
-
-    // print file
-    i = 0;
-    while (i < 32) {
-        if (file[i * 16] == parentIdx && file[i * 16 + 1] != '\0') {
-            printString(file+(i * 16 + 1));
-            printString("\n\r");
-        }
-        i += 1;
-    }
-}
-
-void cat(char* param, int* currDirIdx)  {
-    char buffer[1024];
-    int result;
-    int tmp;
-    result = 1;
-
-    tmp = *currDirIdx;
-    readFile(buffer, param, &result, *currDirIdx);
-    // printString("done reading file\n");
-    if (result == -1) {
-        *currDirIdx = tmp;
-        printString("ERROR : File tidak ditemukan\n");
-        return;
-    }else{
-        *currDirIdx = tmp;
-        printString(buffer);
-        printString("\n");
-    }
-    
-}
-// ln [-fs] [-L|-P] source_file target_file
-// example : ln test4.txt text6.txt made new file text6.txt that linked with test4.txt
-void ln(char* param,int currDirIdx){
-    int i,j;
-    char sourceFileName[180];
-    char targetFileName[180];
-    char currFlName[128];
-    char maps[512];
-    char files[1024];
-    char* pathSource;
-    char* pathTarget;
-    int temp;
-    char currParentIdx;
-    char parentIndex;
-    int sectNum, sectPos, sectIdx, fileSourceIdx;
-    int found;
-    int* foundIdx;
-    int dirNum,dirIdx;
-    int sectorSourcefileIdx;
-    int soft = 0;
-    int z = 0;
-    int filesNum,filesIdx;
-    sourceFileName[0] = '\0';
-    targetFileName[0] = '\0';
-    if(modifiedstrcmp(param,"-s",2,0)){
-        z = 2;
-        soft = 1;
-        z = ignoreSpace(param,z);
-        param = &(param[z]);  
-    }
-    parentIndex  = currDirIdx;
-    i = 0;
-    while(param[i] != ' '|| param[i+j] == 0x0){
-        sourceFileName[i] = param[i];
         i++;
     }
-    i = ignoreSpace(param,i);
-    j = 0;
-    while(!(param[i+j] == 0x20 || param[i+j] == 0x0)){
-        targetFileName[j] = param[i+j];
-        j++;
-    }
-    if(soft){
-        //printString("soft linking\n");
-    }else{
-        //printString("hard linking\n");
-    }
-    /*
-    printString("src file = ");
-    printString(sourceFileName);
-    printString("\ntarget file = ");
-    printString(targetFileName);
-    printString("\n");
-    */
-    if(strlen(targetFileName) == 0 || strlen(sourceFileName) == 0){
-        printString("ERROR : fileName not valid\n");
-        return;
-    }
-
-    pathSource = sourceFileName; // pathSource = ./folder/file ; currDirIdx = 0xFF
-    pathTarget = targetFileName;
-    //below is from readFile from kernel.c
-    
-    // 0. inisialisasi
-    //readSector(maps, 0x100);
-    readSector(files, 0x101);
-    readSector(files + 512, 0x102);
-
-    // 1. cari folder dan file
-    i = 0;
-    j = 0;
-    if (pathSource[i] == '/') {   // dari root
-        currParentIdx = 0xFF;
-        i++;  
-    } else {
-        currParentIdx = parentIndex;
-    }
-
-    // 2. Cari path sampe ketemu bagian file
-    while (pathSource[i] != '\0') {
-        currFlName[j] = pathSource[i];
-        
-        if (currFlName[j] == '/') {
-            
-            currFlName[j] = '\0';
-
-            if (strcmp(currFlName,".")) 
-            {
-                // Do Nothing, di curr dir yang sama
-            } 
-            else if (strcmp(currFlName,"..")) 
-            {   // Back to parent
-                if (currParentIdx != 0xFF) {    // Bukan di root
-                    // Cari parent folder ini
-                    currParentIdx = files[(currParentIdx)*16];
-                }
-                // kalau di root do nothing aja
-            } 
-            else if (strcmp(currFlName,"")) 
-            {
-                printString("Error: Nama folder tidak valid\n");
-                 //*result = -5;
-                return;
-            } else {
-                // Cek apakah sudah tersedia folder yang sama
-                temp = currParentIdx;
-                found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-                
-                if (found) {
-                    //printString("Folder sudah ada\n");
-                    currParentIdx = *foundIdx;
-                    // printString(currParentIdx);
-                } else {
-                    printString("ERROR : Folder tidak ditemukan\n");
-                    currParentIdx = temp;
-                    //*result = -1;
-                    return;
-                }
-            }
-            j = 0;  
-        } else {
-            j++;
-        }
-        i++;
-        
-    }
-    currFlName[j] = pathSource[i];
-
-    
-    // Cek apakah nama file valid (tidak boleh kosong)
-    if (strcmp(currFlName,"")) {
-        printString("ERROR : Nama file tidak valid\n");
-        //*result = -5;
-        return;
-    }
-
-    // 3. Cek file ada
-    //printString("\ncurrFlName = ");
-    //printString(currFlName);
-    temp = currParentIdx;
-    //found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-    found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
-    if (!found) {
-        printString("ERROR : File tidak ditemukan\n");
-        currParentIdx = temp;
-        return;
-    }
-
-//    printString("File ditemukan\n");
-    fileSourceIdx = *foundIdx;
-
-    //yang dibawah sekarang copy dari write file
-    // 2. Cek parrent folder valid
-    found = false;
-    if (parentIndex == 0xFF) { // folder di root
-        found = true;
-    } else if (files[16*parentIndex+1] == 0xFF) { // sebuah folder
-        found = true;
-    }
-
-    if (!found) {
-        printString("ERROR : Folder tidak valid\n");
-        //*sectors = -4;
-        return;
-    }
-    
-
-    // 3. Atur bagian path
-    // 3a. Buat folder
-    i = 0;
-    j = 0;
-    if (pathTarget[i] == '/') {   // dari root
-        currParentIdx = 0xFF;
-        i++;  
-    } else {
-        currParentIdx = parentIndex;
-    }
-
-    
-    while (pathTarget[i] != '\0') {
-        currFlName[j] = pathTarget[i];
-        
-        if (currFlName[j] == '/') {
-            
-            currFlName[j] = '\0';
-
-            if (strcmp(currFlName,".")) 
-            {
-                // Do Nothing, di curr dir yang sama
-            } 
-            else if (strcmp(currFlName,"..")) 
-            {   // Back to parent
-                if (currParentIdx != 0xFF) {    // Bukan di root
-                    // Cari parent folder ini
-                    currParentIdx = files[(currParentIdx)*16];
-                }
-                // kalau di root do nothing aja
-            } 
-            else if (strcmp(currFlName,"")) 
-            {
-                printString("Error: Nama folder tidak valid\n");
-                 //*sectors = -5;
-                return;
-            } else {
-                // Cek apakah sudah tersedia folder yang sama
-                temp = currParentIdx;
-                found = isFlExist(files,currParentIdx,currFlName,true,foundIdx);
-                if (found) {
-                    //printString("Folder sudah ada\n");
-                    currParentIdx = *foundIdx;
-                    // printString(currParentIdx);
-                } else {
-                    // cari files yang kosong
-                    filesIdx = foundEmptyDir(files);
-                    if (filesIdx == -1) {
-                        printString("ERROR : Tidak cukup entri di files\n");
-                        //*sectors = -2;
-                        currParentIdx = temp;
-                        return;
-                    }
-
-                    filesNum = filesIdx*16;
-                    // buat folder baru
-                    writeDir(files,filesNum,currParentIdx,0xFF,currFlName);
-
-                    currParentIdx = filesIdx;
-                }
-            }
-            
-
-            j = 0;  
-        } else {
-            j++;
-        }
-        i++;
-        
-    }
-    currFlName[j] = pathTarget[i];
-    // Cek apakah nama file valid (tidak boleh kosong, kalau kosong berarti cuma create folder doang)
-    
-    
-    if (strcmp(currFlName,"")) {
-        printString("ERROR : Nama file tidak valid\n");
-        //*sectors = -5;
-        return;
-    }
-
-    // 3b. Cek apakah sudah file udah ada
-    found = isFlExist(files,currParentIdx,currFlName,false,foundIdx);
-    if (found) {
-        printString("ERROR : File sudah ada\n");
-        //*sectors = -1;
-        return;
-    }
-    // cari files yang kosong
-    filesIdx = foundEmptyDir(files);
-    if (filesIdx == -1) {
-        printString("ERROR : Tidak cukup entri di files\n");
-        //*sectors = -2;
-        return;
-    }
-    filesNum = filesIdx*16;
-
-
-    // 5. Buat File
-    writeDir(files,filesNum,currParentIdx,files[fileSourceIdx*16+1],currFlName);
-
-    //writeSector(map,0x100);
-	writeSector(files,0x101);
-    writeSector(files+512,0x102);
-    printString("Linking Success!\n");
-    //*sectors = secIdx;
-    return;
 }
 
-void consdot(char* dest, char* add) {
-    int lenAdd;
-    int lenDest;
-    int i, j;
-
-    lenAdd = strlen(add);
-    lenDest = strlen(dest);
-
-    // printString("\nm1 ");
-    // printString(dest);
-    // printString(" m1");
-    // printString("\nm2 ");
-    // printString(add);
-    // printString(" m2\n");
-    i = lenDest-1;
-    while (i >= 0)
-    {
-        dest[i+lenAdd] = dest[i];
-        i--;
-    }
-    
-    i = 0;
-    while (i < lenAdd)
-    {
-        
-        dest[i] = add[i];
-        i++;
-    }
-    dest[lenDest+lenAdd] = '\0';
-    // printString(dest);
-}
-
-
-
-
-char* append(char* first, char* last){
-    //const int lenResult = strlen(first) + strlen(last);
-    char result[256]; 
-    int i,j;
-
-    i = 0;
-    for(i;i<strlen(first);i++){
-        result[i] = first[i];
-    }
-    j = 0;
-    for(j;j<strlen(last);j++){
-        result[i+j] = last[j];
-    }
-    result[i+j] = '\0';
-    return result;
-}
 
 void help(){
 	printString("help  listing all possible commands\n");
@@ -628,4 +308,5 @@ void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3){
         printString("command out of bound\n");
     }
 }
+
 

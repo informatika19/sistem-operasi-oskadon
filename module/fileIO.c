@@ -1,6 +1,5 @@
 #include "fileIO.h"
-#include "sector.h"
-#include "string.h"
+
 
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex) {
     // path jadi nama file dan folder
@@ -286,11 +285,11 @@ void readFile(char *buffer, char *path, int *result, char parentIndex) {
     // Ada 16 sektor
     for (sectNum = 0; sectNum < 16; sectNum++) {
         sectPos = sectIdx * 16 + sectNum;
-        // printString("test\n");
+        
         if (maps[sectPos] == 0x00) { // EOF
             break;
         }
-        readSector(buffer, 0x103 + sectPos);
+        readSector(buffer + (sectNum * 512), 0x103 + sectPos);
     }
     *result = 1;
 }
@@ -484,3 +483,70 @@ void writeDir(char* files, int filesNum, int parrentIdx, int sectorIdx, char* na
         i++;
     }
 }
+
+/*** Unused
+int findFileIndex(char* dir, char *path, int *result, char parentIndex) {
+    // cari file ada di index keberapa di dir
+    char files[1024], parent;
+    int fileIdx, pathIdx;
+    bool isFound;
+
+    parent = parentIndex;
+    fileIdx = 0;
+    pathIdx = 0;
+    isFound = false;
+
+    readSector(files, 0x101);
+    readSector(files + 512, 0x102);
+
+    if (path[0] == "/") { // root
+        pathIdx += 1;
+        parent = 0xFF;
+    }
+    else if (path[0] == "." && path[1] == "/") { // current dir
+        pathIdx += 2;
+    }
+
+    while (path[pathIdx] != 0) {
+        if (path[pathIdx] == "/") { // enter dir
+            if (!isFound) {
+                return -1;
+            }
+            isFound = false;
+            pathIdx += 1;
+        }
+        else if (path[pathIdx] == "." && path[pathIdx + 1] == "." && path[pathIdx + 2] == "/") {
+            if (parent == 0xFF) {
+                return -1;
+            }
+            parent = files[parent * 16];
+            pathIdx += 3;
+        }
+        else { // traverse semua file di dir
+            if (parent != files[fileIdx * 16]) { // file gak di parent
+                fileIdx += 1;
+            }
+            else if (files[fileIdx * 16 + 2] == 0) { // nama kosong
+                fileIdx += 1;
+            }
+            // file found
+            // kalo huruf pertama path sama file sama, pathIdx diupdate
+            else if (isFirstLetter(path + pathIdx, files + fileIdx * 16 + 2)) {
+                pathIdx += strlen(files + fileIdx * 16 + 2);
+                parent = fileIdx;
+                fileIdx = 0;
+                isFound = true;
+            }
+            else {
+                fileIdx += 1;
+            }
+
+            if (fileIdx >= 64) { // max 64 files
+                return -1;
+            }
+        }
+    }
+
+    return parent;
+}
+*/

@@ -19,10 +19,34 @@ dd if=kernel of=system.img bs=512 conv=notrunc seek=1
 echo "Success, Disk Image has been created"
 
 # Compile loadFile
-gcc loadFile_coba.c -o loadFile
+gcc loadFile.c -o loadFile
+gcc loadApp.c -o loadApp
 
 # Compile dan load shell
-bcc -ansi -c -o cek.o cek.c
+bcc -ansi -c -o shell.o shell.c
 nasm -f as86 lib.asm -o lib_asm.o
+ld86 -o shell -d shell.o lib_asm.o fileIO.o folderIO.o math.o sector.o text.o
+./loadApp shell
+
+# File txt external
+./loadFile tes.txt
+
+# Aplikasi cek
+bcc -ansi -c -o cek.o cek.c
 ld86 -o cek -d cek.o lib_asm.o fileIO.o math.o sector.o text.o
-./loadFile cek
+./loadApp cek
+
+# Aplikasi mv
+bcc -ansi -c -o mv.o mv.c
+ld86 -o mv -d mv.o lib_asm.o fileIO.o math.o sector.o text.o
+./loadApp mv
+
+# Aplikasi cat
+bcc -ansi -c -o cat.o cat.c
+ld86 -o cat -d cat.o lib_asm.o fileIO.o math.o sector.o text.o
+./loadApp cat
+
+# Aplikasi ln
+bcc -ansi -c -o ln.o ln.c
+ld86 -o ln -d ln.o lib_asm.o fileIO.o math.o sector.o text.o
+./loadApp ln

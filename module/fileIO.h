@@ -2,6 +2,8 @@
 #define _FILE_IO_H_
 
 #include "boolean.h"
+#include "sector.h"
+#include "text.h"
 
 /** Menulis file dari buffer ke dalam sector yang kosong */
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex);
@@ -15,5 +17,6 @@ bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx
 void getFlName(char* files,char filesIdx, char* name);
 int foundEmptyDir(char* dir);
 void writeDir(char* dir, int dirNum, int parrentIdx, int sectorIdx, char* name);
+
 
 #endif

@@ -1,5 +1,4 @@
 #include "text.h"
-#include "math.h"
 
 int strlen(char* buff) {
     int i = 0;
@@ -43,6 +42,7 @@ void clear(char* buffer, int length) {
     int i = 0;
     while (i < length) {
         buffer[i] = 0x0;
+        i++;
     }
 }
 
@@ -93,72 +93,15 @@ void readString(char* string) {
 }
 
 
-
-/*** Unused
-int findFileIndex(char* dir, char *path, int *result, char parentIndex) {
-    // cari file ada di index keberapa di dir
-    char files[1024], parent;
-    int fileIdx, pathIdx;
-    bool isFound;
-
-    parent = parentIndex;
-    fileIdx = 0;
-    pathIdx = 0;
-    isFound = false;
-
-    readSector(files, 0x101);
-    readSector(files + 512, 0x102);
-
-    if (path[0] == "/") { // root
-        pathIdx += 1;
-        parent = 0xFF;
+int ignoreSpace(char* cmd, int start){ //return new index
+    while(cmd[start] == ' '){
+        start++;
     }
-    else if (path[0] == "." && path[1] == "/") { // current dir
-        pathIdx += 2;
-    }
-
-    while (path[pathIdx] != 0) {
-        if (path[pathIdx] == "/") { // enter dir
-            if (!isFound) {
-                return -1;
-            }
-            isFound = false;
-            pathIdx += 1;
-        }
-        else if (path[pathIdx] == "." && path[pathIdx + 1] == "." && path[pathIdx + 2] == "/") {
-            if (parent == 0xFF) {
-                return -1;
-            }
-            parent = files[parent * 16];
-            pathIdx += 3;
-        }
-        else { // traverse semua file di dir
-            if (parent != files[fileIdx * 16]) { // file gak di parent
-                fileIdx += 1;
-            }
-            else if (files[fileIdx * 16 + 2] == 0) { // nama kosong
-                fileIdx += 1;
-            }
-            // file found
-            // kalo huruf pertama path sama file sama, pathIdx diupdate
-            else if (isFirstLetter(path + pathIdx, files + fileIdx * 16 + 2)) {
-                pathIdx += strlen(files + fileIdx * 16 + 2);
-                parent = fileIdx;
-                fileIdx = 0;
-                isFound = true;
-            }
-            else {
-                fileIdx += 1;
-            }
-
-            if (fileIdx >= 64) { // max 64 files
-                return -1;
-            }
-        }
-    }
-
-    return parent;
+    return start;
 }
+
+
+/***
 
 
 bool isFirstLetter(char* first, char* compare) {

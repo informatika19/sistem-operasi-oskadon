@@ -1,6 +1,4 @@
 #include "folderIO.h"
-#include "boolean.h"
-
 
 void createFolder(char *path, int *result, char parentIndex){
     // path jadi nama
