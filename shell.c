@@ -119,6 +119,16 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
         writeSector(buffParam,801);
         interrupt(0x21, 0xFF06, "bin/mv", 0x2000, &dump);
         // executeProgram("cek", 0x2000, &dump, 0xFF);
+    } else if (modifiedstrcmp(cmd,"cp",2,cmdIndex)) {
+        cmdIndex += 2;
+        cmdIndex = ignoreSpace(cmd,cmdIndex);
+
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+        interrupt(0x21, 0xFF06, "bin/cp", 0x2000, &dump);
     } else if(modifiedstrcmp(cmd,"mkdir",5,cmdIndex)){
         cmdIndex += 5;
         cmdIndex = ignoreSpace(cmd,cmdIndex);

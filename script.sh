@@ -41,6 +41,11 @@ bcc -ansi -c -o mv.o mv.c
 ld86 -o mv -d mv.o lib_asm.o fileIO.o math.o sector.o text.o
 ./loadApp mv
 
+#Aplikasi cp
+bcc -ansi -c -o cp.o cp.c
+ld86 -o cp -d cp.o lib_asm.o fileIO.o math.o sector.o text.o
+./loadApp cp
+
 # Aplikasi cat
 bcc -ansi -c -o cat.o cat.c
 ld86 -o cat -d cat.o lib_asm.o fileIO.o math.o sector.o text.o
