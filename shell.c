@@ -71,14 +71,31 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     }else if(modifiedstrcmp(cmd,"cat",3,cmdIndex)){
         cmdIndex += 3;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
-        cat(&cmd[cmdIndex],currDirIdx);
-        *currDirIdx = tempcurrDirIdx;
+
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+
+        interrupt(0x21, 0xFF06, "bin/cat", 0x2000, &dump);
+
+        // cat(&cmd[cmdIndex],currDirIdx);
+        // *currDirIdx = tempcurrDirIdx;
     }else if (modifiedstrcmp(cmd,"ln",2,cmdIndex)){
         // Currenly not avalible
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
+        
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+
+        interrupt(0x21, 0xFF06, "bin/ln", 0x2000, &dump);
         // ln(&cmd[cmdIndex],*currDirIdx);
-        *currDirIdx = tempcurrDirIdx;
+        // *currDirIdx = tempcurrDirIdx;
     }else if(modifiedstrcmp(cmd,"help",4,cmdIndex)){
     	cmdIndex += 4;	
     	cmdIndex = ignoreSpace(cmd,cmdIndex);
@@ -258,26 +275,6 @@ void ls(int* currDirIdx) {
         }
         i++;
     }
-}
-
-void cat(char* param, int* currDirIdx)  {
-    char buffer[512*16];
-    int result;
-    int tmp;
-    result = 1;
-
-    tmp = *currDirIdx;
-    readFile(buffer, param, &result, *currDirIdx);
-    // printString("done reading file\n");
-    if (result == -1) {
-        *currDirIdx = tmp;
-        printString("ERROR : File tidak ditemukan\n");
-        return;
-    }else{
-        *currDirIdx = tmp;
-        printString(buffer);
-        printString("\n");
-    }  
 }
 
 

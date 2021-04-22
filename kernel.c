@@ -119,6 +119,7 @@ void executeProgram(char *filename, int segment, int *success, char parentIndex)
     int isSuccess;
     int dump;
     char fileBuffer[512 * 16];
+    int i;
     // Buka file dengan readFile
     clear(fileBuffer, 512 * 16);
     readFile(&fileBuffer, filename, &isSuccess, parentIndex);
@@ -126,7 +127,7 @@ void executeProgram(char *filename, int segment, int *success, char parentIndex)
     // If success, salin dengan putInMemory
     if (isSuccess) {
         // launchProgram
-        int i = 0;
+        // int i = 0;
         for (i = 0; i < 512*16; i++) {
             putInMemory(segment, i, fileBuffer[i]);
         }

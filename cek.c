@@ -7,27 +7,20 @@ int main() {
     char parentIdx[512];
     char param[512];
 
+    interrupt(0x21, 0, "MASUK GAIS! \n\0",0,0);   // Entahlah ini harus ada
+    printString("test\n");
+
     clear(parentIdx,512);
     clear(param,512);
 
-
-    interrupt(0x21, 0, "Masuk cok! : \0",0,0);
-    printString("test\n");
-
-
     readSector(parentIdx,800);
     readSector(param,801);
-
-    printString("test param\n");
-    printString(param);
-    printString("\n");
     
 
-    // dump = findFileIdx("shell",0xFF);
+    // dump = findFileIdx("bin/shell",0xFF);
     // if (dump != -1) {
     //     printString("Ketemu");
     // }
-    
     
 
     interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);

@@ -31,12 +31,22 @@ ld86 -o shell -d shell.o lib_asm.o fileIO.o folderIO.o math.o sector.o text.o
 # File txt external
 ./loadFile tes.txt
 
-# Aplikasi
+# Aplikasi cek
 bcc -ansi -c -o cek.o cek.c
 ld86 -o cek -d cek.o lib_asm.o fileIO.o math.o sector.o text.o
 ./loadApp cek
 
-# Aplikasi
+# Aplikasi mv
 bcc -ansi -c -o mv.o mv.c
 ld86 -o mv -d mv.o lib_asm.o fileIO.o math.o sector.o text.o
 ./loadApp mv
+
+# Aplikasi cat
+bcc -ansi -c -o cat.o cat.c
+ld86 -o cat -d cat.o lib_asm.o fileIO.o math.o sector.o text.o
+./loadApp cat
+
+# Aplikasi ln
+bcc -ansi -c -o ln.o ln.c
+ld86 -o ln -d ln.o lib_asm.o fileIO.o math.o sector.o text.o
+./loadApp ln
