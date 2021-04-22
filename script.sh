@@ -34,7 +34,7 @@ ld86 -o shell -d shell.o lib_asm.o fileIO.o folderIO.o math.o sector.o text.o
 # Aplikasi cek
 bcc -ansi -c -o cek.o cek.c
 ld86 -o cek -d cek.o lib_asm.o fileIO.o math.o sector.o text.o
-./loadApp cek
+./loadFile cek
 
 # Aplikasi mv
 bcc -ansi -c -o mv.o mv.c
@@ -50,3 +50,9 @@ ld86 -o cat -d cat.o lib_asm.o fileIO.o math.o sector.o text.o
 bcc -ansi -c -o ln.o ln.c
 ld86 -o ln -d ln.o lib_asm.o fileIO.o math.o sector.o text.o
 ./loadApp ln
+
+
+# Aplikasi run
+bcc -ansi -c -o run.o run.c
+ld86 -o run -d run.o lib_asm.o fileIO.o math.o sector.o text.o
+./loadApp run

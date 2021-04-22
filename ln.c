@@ -141,7 +141,6 @@ int main() {
 
     // Cek apakah nama file valid (tidak boleh kosong)
     if (strcmp(currFlName,"")) {
-        printString("this???\n");
         printString("Nama file tidak valid\n");
         interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
     }

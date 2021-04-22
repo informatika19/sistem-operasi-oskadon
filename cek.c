@@ -6,6 +6,7 @@ int main() {
     int dump;
     char parentIdx[512];
     char param[512];
+    char currParentIdx;
 
     interrupt(0x21, 0, "MASUK GAIS! \n\0",0,0);   // Entahlah ini harus ada
     printString("test\n");
@@ -15,6 +16,8 @@ int main() {
 
     readSector(parentIdx,800);
     readSector(param,801);
+
+    currParentIdx = parentIdx[0];
     
 
     // dump = findFileIdx("bin/shell",0xFF);
