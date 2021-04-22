@@ -25,7 +25,7 @@ gcc loadApp.c -o loadApp
 # Compile dan load shell
 bcc -ansi -c -o shell.o shell.c
 nasm -f as86 lib.asm -o lib_asm.o
-ld86 -o shell -d shell.o lib_asm.o fileIO.o folderIO.o math.o sector.o text.o
+ld86 -o shell -d shell.o lib_asm.o fileIO.o  math.o sector.o text.o
 ./loadApp shell
 
 # File txt external
@@ -34,7 +34,7 @@ ld86 -o shell -d shell.o lib_asm.o fileIO.o folderIO.o math.o sector.o text.o
 # Aplikasi cek
 bcc -ansi -c -o cek.o cek.c
 ld86 -o cek -d cek.o lib_asm.o fileIO.o math.o sector.o text.o
-./loadApp cek
+./loadFile cek
 
 # Aplikasi mv
 bcc -ansi -c -o mv.o mv.c
@@ -62,3 +62,8 @@ ld86 -o mkdir -d mkdir.o lib_asm.o fileIO.o folderIO.o math.o sector.o text.o
 ./loadApp mkdir
 
 
+
+# Aplikasi run
+bcc -ansi -c -o run.o run.c
+ld86 -o run -d run.o lib_asm.o fileIO.o math.o sector.o text.o
+./loadApp run

@@ -1,6 +1,5 @@
 #include "module/boolean.h"
 #include "module/fileIO.h"
-#include "module/folderIO.h"
 #include "module/math.h"
 #include "module/text.h"
 #include "module/sector.h"
@@ -11,10 +10,7 @@ int ignoreSpace(char* cmd, int start);
 void printCurrDirName(int currDirIdx);
 void cd(char* param,int* currDirIdx);
 void ls(int* currDirIdx);
-void cat(char* param,int* currDirIdx);
-// void ln(char* param,int currDirIdx);
 void help();
-void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3);
 
 int main(){
     char buffCurrDirIdx[512];
@@ -101,11 +97,7 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
     	cmdIndex = ignoreSpace(cmd,cmdIndex);
 	    help();
         *currDirIdx = tempcurrDirIdx;
-    }else if(modifiedstrcmp(cmd,"prev",4,cmdIndex)){
-    	cmdIndex += 4;	
-    	cmdIndex = ignoreSpace(cmd,cmdIndex);
-	    prev(&cmd[cmdIndex],currDirIdx,cmd1,cmd2,cmd3);
-    } else if (modifiedstrcmp(cmd,"cek",3,cmdIndex)) {
+    }else if (modifiedstrcmp(cmd,"cek",3,cmdIndex)) {
         cmdIndex += 3;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
 
@@ -127,17 +119,31 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
         writeSector(buffParam,801);
         interrupt(0x21, 0xFF06, "bin/mv", 0x2000, &dump);
         // executeProgram("cek", 0x2000, &dump, 0xFF);
-    } else if (modifiedstrcmp(cmd,"mkdir",5,cmdIndex)){
+    } else if(modifiedstrcmp(cmd,"mkdir",5,cmdIndex)){
         cmdIndex += 5;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
 
+        
         strcpy(buffCurrDirIdx,currDirIdx);
         strcpy(buffParam,&cmd[cmdIndex]);
 
         writeSector(buffCurrDirIdx,800);
         writeSector(buffParam,801);
         interrupt(0x21, 0xFF06, "bin/mkdir", 0x2000, &dump);
-    } else if(modifiedstrcmp(cmd,"rm",2,cmdIndex)){
+    }
+    else if (modifiedstrcmp(cmd,"./",2,cmdIndex)) {
+        // cmdIndex += 2;
+        // cmdIndex = ignoreSpace(cmd,cmdIndex);
+
+        strcpy(buffCurrDirIdx,currDirIdx);
+        strcpy(buffParam,&cmd[cmdIndex]);
+
+        writeSector(buffCurrDirIdx,800);
+        writeSector(buffParam,801);
+        interrupt(0x21, 0xFF06, "bin/run", 0x2000, &dump);
+        // executeProgram("cek", 0x2000, &dump, 0xFF);
+
+    }else if(modifiedstrcmp(cmd,"rm",2,cmdIndex)){
         cmdIndex += 2;
         cmdIndex = ignoreSpace(cmd,cmdIndex);
 
@@ -306,27 +312,3 @@ void help(){
 	printString("ln    create a hard link or a symbolic link to an existing file or directory\n");
     printString("prev  execute previous command (up to 3 command)\n"); 
 }
-
-void prev(char* cmd ,int* currDirIdx, char* cmd1 ,char* cmd2 ,char* cmd3){
-    int i = 0;
-    if(cmd[i] == '1'){
-        printString("executing ");
-        printString(cmd1);
-        printString("\n");
-        executecmd(cmd1,cmd1,cmd2,cmd3,currDirIdx);
-    }else if(cmd[i] == '2'){
-        printString("executing ");
-        printString(cmd2);
-        printString("\n");
-        executecmd(cmd2,cmd1,cmd2,cmd3,currDirIdx);
-    }else if(cmd[i] == '3'){
-        printString("executing ");
-        printString(cmd3);
-        printString("\n");
-        executecmd(cmd3,cmd1,cmd2,cmd3,currDirIdx);
-    }else{
-        printString("command out of bound\n");
-    }
-}
-
-
