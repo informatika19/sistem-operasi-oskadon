@@ -16,3 +16,4 @@ rm
 cp
 loadApp
 loadFile
+bochsout.txt
