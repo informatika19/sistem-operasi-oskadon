@@ -14,3 +14,7 @@ ln
 mkdir
 mv
 rm
+cp
+run
+loadApp
+loadFile
