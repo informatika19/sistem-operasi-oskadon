@@ -1,6 +1,6 @@
 application/cache
 **/.vscode
-system.img
+*.img
 *.txt
 *.o
 bootloader
@@ -15,6 +15,5 @@ mkdir
 mv
 rm
 cp
-run
 loadApp
 loadFile
