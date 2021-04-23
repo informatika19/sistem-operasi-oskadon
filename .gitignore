@@ -1,8 +1,6 @@
 application/cache
 **/.vscode
-*.img
-!image2binary/*.img
-*.txt
+/*.img
 *.o
 bootloader
 kernel
