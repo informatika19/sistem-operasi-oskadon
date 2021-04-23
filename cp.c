@@ -25,7 +25,7 @@ int main() {
     bool found;
     int i,j;
 
-    interrupt(0x21, 0, "Executing cp...\n\0",0,0);   // Entahlah ini harus ada
+    interrupt(0x21, 0, "Executing cp...\n\0",0,0);   // JIMAT, GA ADA INI ERROR
     // Bersihkan buffer
     clear(parentIdx,512);
     clear(param,512);

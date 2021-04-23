@@ -28,7 +28,7 @@ int main() {
     int z = 0;
     int filesNum,filesIdx;
 
-    interrupt(0x21, 0, "Executing ln...! \n\0",0,0);   // Entahlah ini harus ada
+    interrupt(0x21, 0, "Executing ln...! \n\0",0,0);   // JIMAT, GA ADA INI ERROR
 
     clear(parentIdx,512);
     clear(param,512);

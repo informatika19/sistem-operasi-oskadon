@@ -8,7 +8,7 @@ int main() {
     char param[512];
     char currParentIdx;
 
-    interrupt(0x21, 0, "MASUK GAIS! \n\0",0,0);   // Entahlah ini harus ada
+    interrupt(0x21, 0, "MASUK GAIS! \n\0",0,0);   // JIMAT, GA ADA INI ERROR
     printString("test\n");
 
     clear(parentIdx,512);
