@@ -100,6 +100,81 @@ int ignoreSpace(char* cmd, int start){ //return new index
     return start;
 }
 
+// Fungsionalitas Tambahan
+bool isFlExist(char* dir, int parrentIdx, char* name, bool folder, int* foundIdx) {
+    // return index file yang ditemukan pada foundIdx
+    int filesIdx,j;
+    char buffName[15];
+    bool found = false;
+
+    filesIdx = 0;
+    while (filesIdx < 64 && !found) {
+        if (dir[16*filesIdx] == parrentIdx) {            // kalau ternyata ada yang parent indexnya sama
+            getFlName(dir,filesIdx,buffName);
+            if (strcmp(buffName,name)) {         // cek apakah namanya sama
+                
+                if ((folder && dir[16*filesIdx+1] == 0xFF) || (!folder && dir[16*filesIdx+1] != 0xFF)) {  // cek jenisnya sama
+                    found = true;
+                }   
+            }
+        }
+        filesIdx++; 
+    }
+    *foundIdx = --filesIdx;
+    return found;
+}
+
+int foundEmptyDir(char* dir) {
+    // return dirIdx jika ketemu yang kosong, return -1 jika tidak ditemukan
+    bool found = false;
+    int dirIdx = 0;
+    int dirNum = 16*dirIdx;
+    while (dirIdx < 64 && !found) {     // ada 64 dir yang bisa diisi
+        if (dir[dirNum] == 0x00 && dir[dirNum+1] == 0x00 && dir[dirNum+2] == 0x00){    // Kemungkinan ada bug
+            found = true;
+        } else {
+            dirIdx++;
+            dirNum = 16*dirIdx;
+        }
+    }
+
+    if (found) {
+        return dirIdx;
+    } else {
+        return -1;
+    }
+    
+}
+
+void getFlName(char* files,char filesIdx, char* name) {
+    int i;
+
+    for (i = 0; i < 14; i++) {
+        name[i] = files[16*filesIdx+(2+i)];    
+    }
+    name[14] = '\0';
+}
+
+
+void writeDir(char* files, int filesNum, int parrentIdx, int sectorIdx, char* name) {
+    int i,j;
+
+    files[filesNum] = parrentIdx;
+    files[filesNum+1] = sectorIdx;
+    i = filesNum + 2;
+    
+    j = 0;
+    while (i < filesNum+15 && j < strlen(name)) { 
+        files[i] = name[j];
+        i++;
+        j++;
+    }
+    while (i < filesNum+16) {    // Padding yang kosong
+        files[i] = 0x0;
+        i++;
+    }
+}
+
 
 /***
 
