@@ -16,7 +16,7 @@ Shell berfungsi selayaknya mesin kata dimana shell menerima kata perkata dan mel
 *rm     deletes file or folder\
 *mkdir  create a folder\
 *mv     moves file or folder\
-*cp     copy file or folder\
+*cp     copy file or folder
 
 
 Shell merupakan suatu program interface bagi user untuk berinteraksi dengan operating system 
