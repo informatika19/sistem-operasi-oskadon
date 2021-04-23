@@ -1,8 +1,8 @@
-#include "module/boolean.h"
-#include "module/fileIO.h"
-#include "module/math.h"
-#include "module/text.h"
-#include "module/sector.h"
+#include "lib/boolean.h"
+#include "lib/fileIO.h"
+#include "lib/math.h"
+#include "lib/text.h"
+#include "lib/sector.h"
 
 void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3,int* currDirIdx);
 int modifiedstrcmp(char* a, char* b, int len,int start);

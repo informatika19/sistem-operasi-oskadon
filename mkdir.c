@@ -1,6 +1,6 @@
-#include "module/folderIO.h"
-#include "module/text.h"
-#include "module/sector.h"
+#include "lib/folderIO.h"
+#include "lib/text.h"
+#include "lib/sector.h"
 
 int main() {
     int dump;

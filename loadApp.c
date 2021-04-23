@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "module/boolean.h"
+#include "lib/boolean.h"
 
 /** Fungsi penunjang */
 bool isFlExist(char* dir, char parrentIdx, char* name, bool folder, int* foundIdx);

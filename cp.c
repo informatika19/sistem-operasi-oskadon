@@ -1,6 +1,6 @@
-#include "module/boolean.h"
-#include "module/fileIO.h"
-#include "module/sector.h"
+#include "lib/boolean.h"
+#include "lib/fileIO.h"
+#include "lib/sector.h"
 
 int main() {
     // KAMUS

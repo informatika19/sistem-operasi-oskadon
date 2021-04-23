@@ -1,10 +1,10 @@
 // Library
-#include "module/boolean.h"
-#include "module/fileIO.h"
-#include "module/folderIO.h"
-#include "module/math.h"
-#include "module/text.h"
-#include "module/sector.h"
+#include "lib/boolean.h"
+#include "lib/fileIO.h"
+#include "lib/folderIO.h"
+#include "lib/math.h"
+#include "lib/text.h"
+#include "lib/sector.h"
 
 
 // Fungsi Bawaan
