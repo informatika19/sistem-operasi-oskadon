@@ -150,7 +150,7 @@ void executecmd(char* cmd,char* cmd1,char* cmd2,char* cmd3, int* currDirIdx){
 
         writeSector(buffCurrDirIdx,800);
         writeSector(buffParam,801);
-        interrupt(0x21, 0xFF06, "bin/run", 0x2000, &dump);
+        interrupt(0x21, 0xFF06, "bin/exec", 0x2000, &dump);
         // executeProgram("cek", 0x2000, &dump, 0xFF);
 
     }else if(modifiedstrcmp(cmd,"rm",2,cmdIndex)){

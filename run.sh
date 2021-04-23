@@ -66,7 +66,10 @@ bcc -ansi -c -o mkdir.o mkdir.c
 ld86 -o mkdir -d mkdir.o lib_asm.o fileIO.o folderIO.o math.o sector.o text.o
 ./loadApp mkdir
 
-# Aplikasi exec
+# Aplikasi run
 bcc -ansi -c -o exec.o exec.c
 ld86 -o exec -d exec.o lib_asm.o fileIO.o math.o sector.o text.o
 ./loadApp exec
+
+# Jalankan bochs
+echo c | bochs -f if2230.config

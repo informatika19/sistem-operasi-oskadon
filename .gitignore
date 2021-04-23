@@ -5,3 +5,12 @@ system.img
 *.o
 bootloader
 kernel
+shell
+cat
+cek
+cp
+exec
+ln
+mkdir
+mv
+rm
