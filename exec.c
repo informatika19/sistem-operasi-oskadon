@@ -33,6 +33,18 @@ int main() {
     readSector(param,801);
 
     currParentIdx = parentIdx[0];
+    //cek param apakah executable
+
+    i = strlen(param)-2;
+    while(i > 2){
+        if(param[i] == '.'){
+            printString("Bukan File Executable\n");
+            interrupt(0x21, 0xFF06, "bin/shell", 0x2000, &dump);
+        }
+        
+        i--;
+    }
+
 
     // Copy parameter
     i = 0;
